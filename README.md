@@ -1,9 +1,6 @@
 # EchoesRealm Visualizer
 
-## ⚠️ Note on Video Rendering
-The offline video rendering feature uses FFmpeg. While functional, it may require specific system resources or configurations depending on your OS.
-
-A high-performance, real-time music visualizer built with Electron. It captures audio from your system or microphone and renders it into a variety of stunning, deeply customizable visual patterns.
+## ⚠️ Note on Video Rendering (doesnt work)
 
 ## Features
 
