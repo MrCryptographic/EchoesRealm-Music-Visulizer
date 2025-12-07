@@ -1,0 +1,41 @@
+{
+  "name": "echoesrealm-visualizer",
+  "version": "2.1.0",
+  "description": "A high-performance dynamic music visualizer",
+  "main": "main.js",
+  "author": "EchoesRealmArrow",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron . --no-sandbox",
+    "dist:linux": "electron-builder --linux deb",
+    "dist:win": "electron-builder --win nsis"
+  },
+  "build": {
+    "appId": "com.echoesrealm.visualizer",
+    "productName": "EchoesRealm Visualizer",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "**/*",
+      "!dist/*",
+      "!src/*"
+    ],
+    "linux": {
+      "target": ["deb"],
+      "category": "Audio",
+      "icon": "build/icon.png"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "build/icon.png"
+    }
+  },
+  "dependencies": {
+    "music-metadata": "^7.14.0"
+  },
+  "devDependencies": {
+    "electron": "^28.2.0",
+    "electron-builder": "^24.9.1"
+  }
+}
