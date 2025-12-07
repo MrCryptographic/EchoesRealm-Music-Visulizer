@@ -1,20 +1,23 @@
 # EchoesRealm Visualizer
 
-## ⚠️ Note on Video Rendering (doesnt work)
+![EchoesRealm Visualizer](https://i.imgur.com/k9yXQ7p.png)
+
+A high-performance, real-time music visualizer built with Electron. It captures audio from your system or microphone and renders it into a variety of stunning, deeply customizable visual patterns. This is a pure, lightweight visualizer designed for live performance and desktop aesthetics.
 
 ## Features
 
 -   **Live Audio Capture:** Visualize audio from any source (Spotify, YouTube, System Sounds) or a microphone.
--   **Massive Visualizer Library:** Choose from over 15 unique visualizer styles, ranging from classic bars to abstract geometry and organic shapes.
+-   **Massive Visualizer Library:** Choose from over 14 unique visualizer styles, ranging from classic bars to abstract geometry and organic shapes.
 -   **Dynamic Effects Engine:** A robust post-processing engine adding screen shake, chromatic aberration, glows, and scanlines that react to audio intensity.
 -   **Particle System:** An integrated physics-based particle system where sparks fly off the visualizer beat.
 -   **Profile Picture Overlay:** Upload a custom image to display in the center of the visualizer.
 -   **Deep Customization:**
     -   **Rainbow Mode:** Automatically cycles through colors.
     -   **Gradient Control:** Create custom multi-stop gradients.
-    -   **OS Accent Sync:** Match your visualizer to your Windows system colors.
+    -   **OS Accent Sync:** Match your visualizer to your system colors.
     -   **Rotation & Direction:** Control the speed and flow of circular visualizers.
 -   **Persistent Settings:** All your configurations are saved automatically.
+-   **Cross-Platform:** Runs on Windows and Linux.
 
 ---
 
@@ -101,7 +104,7 @@ Click the **gear icon** (top-right) to open the sidebar.
 
 ### 🎨 Color & Style
 -   **Rainbow Mode:** Cycles through the color spectrum automatically.
--   **Use OS Accent Color:** (Windows) Matches system theme.
+-   **Use OS Accent Color:** Matches system theme.
 -   **Gradient Colors:** Manually build a gradient with up to 8 colors.
 -   **Sensitivity:** Reactivity multiplier. High = more movement.
 -   **Motion Blur:** Controls the trail length. Low slider = Long trails. High slider = Sharp/Fast.
@@ -112,7 +115,6 @@ Click the **gear icon** (top-right) to open the sidebar.
 -   **Electron** - App Framework
 -   **Web Audio API** - Audio Analysis
 -   **HTML5 Canvas** - Rendering
--   **FFmpeg** - Video Export
 
 ## License
 MIT License
