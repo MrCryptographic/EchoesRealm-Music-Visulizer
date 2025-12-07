@@ -1,139 +1,123 @@
 # EchoesRealm Visualizer
-## BIG NOTE: The Render Video option is kind of broken, from my experience.
 
+## ⚠️ Note on Video Rendering
+The offline video rendering feature uses FFmpeg. While functional, it may require specific system resources or configurations depending on your OS.
 
-[Video Preview](https://github.com/user-attachments/files/23537124/2025-11-13.18-43-32.mp3)
+![EchoesRealm Visualizer](https://i.imgur.com/k9yXQ7p.png)
 
-
-A high-performance, real-time music visualizer built with Electron. It can capture and react to any audio on your system (or from a microphone) and offers a deeply customizable visual experience. The application also features a powerful offline rendering engine to export your creations as high-quality videos.
+A high-performance, real-time music visualizer built with Electron. It captures audio from your system or microphone and renders it into a variety of stunning, deeply customizable visual patterns.
 
 ## Features
 
--   **Live Audio Capture:** Visualize any audio playing on your system (e.g., Spotify, YouTube) or from any connected microphone.
--   **Extensive Visualizer Library:** Choose from a wide variety of visualizer types, from classic frequency bars to abstract geometric shapes.
--   **Powerful Effects Engine:** Apply and customize a suite of dynamic effects—like screen shake, color aberration, glow, and particles—that react to the music's intensity.
+-   **Live Audio Capture:** Visualize audio from any source (Spotify, YouTube, System Sounds) or a microphone.
+-   **Massive Visualizer Library:** Choose from over 15 unique visualizer styles, ranging from classic bars to abstract geometry and organic shapes.
+-   **Dynamic Effects Engine:** A robust post-processing engine adding screen shake, chromatic aberration, glows, and scanlines that react to audio intensity.
+-   **Particle System:** An integrated physics-based particle system where sparks fly off the visualizer beat.
+-   **Profile Picture Overlay:** Upload a custom image to display in the center of the visualizer.
 -   **Deep Customization:**
-    -   Create complex multi-color gradients.
-    -   Automatically match your OS accent color (Windows only).
-    -   Control visualizer-specific options like fill/outline and direction.
-    -   Fine-tune particle physics, including gravity and lifespan.
--   **Offline Video Rendering:** Select a local audio file, choose an optional album art, and export your customized visualizer as an MP4 video file using FFmpeg.
--   **Persistent Settings:** Your entire configuration is automatically saved and loaded between sessions.
+    -   **Rainbow Mode:** Automatically cycles through colors.
+    -   **Gradient Control:** Create custom multi-stop gradients.
+    -   **OS Accent Sync:** Match your visualizer to your Windows system colors.
+    -   **Rotation & Direction:** Control the speed and flow of circular visualizers.
+-   **Persistent Settings:** All your configurations are saved automatically.
 
 ---
 
-## Installation and Setup
+## Installation
 
 ### Prerequisites
 
-You must have **Node.js** and **npm** installed on your system.
--   **Windows/macOS:** Download the LTS version from the [official Node.js website](https://nodejs.org/).
--   **Linux:** It is **highly recommended** to install Node.js using **[nvm (Node Version Manager)](https://github.com/nvm-sh/nvm)** to avoid system-wide permission issues. Do **not** use `sudo apt install npm`.
+-   **Node.js** & **npm**:
+    -   **Windows/macOS:** Download the LTS version from [nodejs.org](https://nodejs.org/).
+    -   **Linux:** Use **[nvm](https://github.com/nvm-sh/nvm)**. Avoid `sudo apt install npm` to prevent permission issues.
 
-### Running the Application
+### Setup
 
 1.  **Clone the repository:**
     ```bash
     git clone https://github.com/MrCryptographic/EchoesRealm-Music-Visualizer.git
-    ```
-
-2.  **Navigate to the project directory:**
-    ```bash
     cd EchoesRealm-Visualizer
     ```
 
-3.  **Install dependencies:** This is a crucial step that downloads Electron, FFmpeg, and all other necessary libraries.
+2.  **Install dependencies:**
     ```bash
     npm install
     ```
 
-4.  **Start the application:**
+3.  **Run the app:**
     ```bash
     npm start
     ```
 
-### ❗️ Important Note for Linux Users (PipeWire/PulseAudio)
-
-Modern Linux distributions use PipeWire for audio. If the **System Audio** source fails to capture sound (especially if you use tools like EasyEffects/PulseEffects), you can manually route the audio using `pavucontrol`.
-
-1.  Install the tool: `sudo apt install pavucontrol`
-2.  Start the visualizer and play some music.
-3.  Open `pavucontrol` and go to the **"Recording"** tab.
-4.  You will see "Electron" or "Chromium". Change its capture source from the default to **"Monitor of [Your Speakers/Headphones]"**. The visualizer will immediately start working.
+### 🐧 Linux Audio Troubleshooting (PipeWire)
+If the visualizer doesn't move when "System Audio" is selected:
+1.  Install **pavucontrol**: `sudo apt install pavucontrol`
+2.  Run the visualizer.
+3.  Open **pavucontrol**, go to the **Recording** tab.
+4.  Find "Electron" and change the source to **"Monitor of [Your Audio Output]"**.
 
 ---
 
-## Settings Explained
+## Settings Guide
 
-Click the **gear icon** in the top-right to open the settings sidebar.
+Click the **gear icon** (top-right) to open the sidebar.
 
-### Audio
+### 🎵 Audio
+-   **Audio Source:** Switch between `System Audio` (what you hear) and `Microphone`.
+-   **Microphone:** Select specifically which input device to use.
 
--   **Audio Source:**
-    -   `System Audio`: Captures whatever sound is currently playing out of your speakers.
-    -   `Microphone`: Switches to using a microphone input.
--   **Microphone:** (Visible only when "Microphone" is selected) A dropdown list of all available microphone devices on your system.
+### 👁️ Visualizer Types
+-   **Center Bars:** Symmetrical bars growing outward from the center.
+-   **Upward Bars:** Classic bars growing from the bottom up.
+-   **Dual-Sided Bars:** Bars growing from both top and bottom edges.
+-   **Floor & Ceiling:** Mirrored bars on top and bottom.
+-   **Circular Lines:** Lines radiating from a center circle.
+-   **Sunburst:** A connected, sharp star-shape expanding with the beat.
+-   **Spokes:** Defined rays reacting to bass and mids.
+-   **Blob:** A solid, organic, pulsating circle.
+-   **Polygons:** Rotating concentric shapes (triangle, square, pentagon) reacting to Bass, Mids, and Highs.
+-   **Nested Polygons:** A hypnotic tunnel of rotating triangles.
+-   **Starfield:** Twinkling stars scattered across the screen that react to frequency.
+-   **Shatter:** A pulsating core that explodes into particles on heavy beats.
+-   **Flower:** An organic, petal-like shape that blooms.
+-   **Frequency Wave:** A smooth line graph of the audio spectrum.
+-   **Circular Waveform:** The raw audio waveform wrapped into a circle.
+-   **Waveform:** Classic oscilloscope line.
 
-### Visualizer
+### ⚙️ Visualizer Options
+*(Options appear based on the selected visualizer)*
+-   **Fill Shapes:** Toggle between solid fills or outlines.
+-   **Direction:** Make circular visualizers grow `Outward` or `Inward`.
+-   **Rotation Speed:** Controls how fast polygon-based visualizers spin based on audio intensity.
 
--   **Visualizer Type:** The base algorithm for the visualizer.
-    -   `Center Bars`: Symmetrical frequency bars that grow outwards from the center line.
-    -   `Upward Bars`: Frequency bars that grow upwards from the bottom of the screen.
-    -   `Dual-Sided Bars`: Bars that grow from the top and bottom edges towards the center.
-    -   `Floor & Ceiling`: Mirrored bars that grow from the top and bottom, creating a symmetrical pattern.
-    -   `Circular Lines`: Lines that radiate from a central point.
-    -   `Sunburst`: A connected, star-like shape that expands and contracts with the audio.
-    -   `Spokes`: Similar to Circular Lines but focuses on fewer, more distinct lines for bass and mids.
-    -   `Blob`: A solid, organic, pulsating circular shape.
-    -   `Polygons`: Concentric, rotating shapes (triangles, squares, pentagons) that react to different frequency bands.
-    -   `Shatter`: A circular base that "shatters" into particles based on audio intensity.
-    -   `Frequency Wave`: A smooth, flowing line graph of the audio frequencies.
-    -   `Circular Waveform`: The raw audio waveform wrapped into a circle.
-    -   `Waveform`: A classic oscilloscope-style line showing the raw audio waveform.
+### 🖼️ Overlay Image
+-   **Profile Image:** Select a local image file (PNG/JPG) to display as a circular avatar in the center of the screen.
 
--   **Visualizer Options:** (This section appears for compatible visualizers)
-    -   **Fill Shapes:** Toggles between solid shapes (`checked`) and outlines (`unchecked`) for visualizers like `Blob`, `Sunburst`, and `Polygons`.
-    -   **Direction:** For `Circular Lines`, switches between lines growing `Outward` from the center or `Inward` from the screen edge.
+### ⚡ Effects Engine
+-   **Shake Intensity:** How violently the screen shakes on loud beats.
+-   **Color Aberration:** Splits RGB channels for a glitch effect.
+-   **Glow Intensity:** Radius of the bloom/glow effect.
+-   **Glow Color:** The color of the glow shadow.
+-   **Scan Line Intensity:** CRT-style horizontal lines overlay.
+-   **Enable Particles:** Turns the particle physics system on/off.
+    -   **Amount:** Particles spawned per beat.
+    -   **Gravity:** How fast particles fall.
+    -   **Lifespan:** How long particles fade out.
 
-### Dynamic Effects Engine
-
-These effects are only active when **Enable Dynamic Effects** is checked. Their strength is tied to the real-time volume of the audio.
-
--   **Shake Intensity:** Controls the maximum amount of screen shake during loud moments.
--   **Color Aberration:** Splits the visualizer into its Red, Green, and Blue channels and offsets them for a glitchy, chromatic effect. This slider controls the maximum offset distance.
--   **Glow Intensity:** Controls the brightness and radius of an outer glow effect.
--   **Glow Color:** Sets the color of the glow.
--   **Scan Line Intensity:** Overlays dark, horizontal lines on the screen, which become more opaque with volume, mimicking an old CRT monitor.
-
--   **Enable Particles:** Master toggle for the particle system.
--   **Particle Amount:** Controls how many particles are spawned relative to the audio intensity.
--   **Particle Gravity:** Controls the downward force applied to particles each frame. A higher value means they fall faster.
--   **Particle Lifespan:** Controls how long particles stay on screen before fading out.
-
-### Color & Style
-
--   **Use OS Accent Color:** (Windows only) When checked, automatically creates a three-point gradient based on your Windows accent color, disabling the manual gradient controls.
--   **Gradient Colors:**
-    -   Click a color box to change that color in the gradient.
-    -   Click the `+` button to add a new color stop (up to 8 total).
-    -   Click the `×` button to remove a color stop (minimum of 2).
--   **Background:** Sets the solid color of the background.
--   **Sensitivity:** A multiplier for how much the visualizers react to the audio. Higher values create larger visualizer movements.
--   **Motion Blur:** Controls the length of the "ghosting" trail. A lower value creates a longer, smoother trail. A higher value creates a sharper, more immediate effect.
+### 🎨 Color & Style
+-   **Rainbow Mode:** Cycles through the color spectrum automatically.
+-   **Use OS Accent Color:** (Windows) Matches system theme.
+-   **Gradient Colors:** Manually build a gradient with up to 8 colors.
+-   **Sensitivity:** Reactivity multiplier. High = more movement.
+-   **Motion Blur:** Controls the trail length. Low slider = Long trails. High slider = Sharp/Fast.
 
 ---
 
 ## Built With
-
--   [Electron](https://www.electronjs.org/)
--   [Node.js](https://nodejs.org/)
--   [FFmpeg](https://ffmpeg.org/) via `fluent-ffmpeg`
--   [music-metadata](https://github.com/Borewit/music-metadata-browser)
-
-## Author
-
--   **EchoesRealmArrow**
+-   **Electron** - App Framework
+-   **Web Audio API** - Audio Analysis
+-   **HTML5 Canvas** - Rendering
+-   **FFmpeg** - Video Export
 
 ## License
-
-This project is licensed under the MIT License.
+MIT License
