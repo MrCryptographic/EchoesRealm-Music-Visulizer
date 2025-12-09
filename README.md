@@ -1,20 +1,20 @@
 <img width="512" height="512" alt="icon" src="https://github.com/user-attachments/assets/1fdfb7a1-a862-4bf7-a142-e972fcf87840" />
 
-
 # EchoesRealm Visualizer
-## Note: I still trying to figure out how to upload all the files at once from my PC, so the source code will be a couple updates behind, compared to the releases.
-A high-performance, real-time music visualizer built with Electron. It captures audio from your system or microphone and renders it into a variety of stunning, deeply customizable visual patterns. This is a pure, lightweight visualizer designed for live performance and desktop aesthetics.
+
+A high-performance, real-time music visualizer built with Electron. It captures audio from your system or microphone and renders it into a variety of stunning, deeply customizable visual patterns. Designed for live performance, desktop customization, and visual aesthetics.
 
 ## Features
 
 -   **Live Audio Capture:** Visualize audio from any source (Spotify, YouTube, System Sounds) or a microphone.
--   **Massive Visualizer Library:** Choose from over 14 unique visualizer styles, ranging from classic bars to abstract geometry and organic shapes.
+-   **Massive Visualizer Library:** Choose from **21 unique visualizer styles**, ranging from classic bars to abstract geometry, digital rain, and organic shapes.
 -   **Dynamic Effects Engine:** A robust post-processing engine adding screen shake, chromatic aberration, glows, and scanlines that react to audio intensity.
 -   **Particle System:** An integrated physics-based particle system where sparks fly off the visualizer beat.
 -   **Profile Picture Overlay:** Upload a custom image to display in the center of the visualizer.
 -   **Deep Customization:**
     -   **Rainbow Mode:** Automatically cycles through colors.
-    -   **Gradient Control:** Create custom multi-stop gradients.
+    -   **Smart Gradients:** Extract color palettes directly from any image file or build your own multi-stop gradients.
+    -   **Gradient Backgrounds:** Apply your color palette to the background with dynamic fading.
     -   **OS Accent Sync:** Match your visualizer to your system colors.
     -   **Rotation & Direction:** Control the speed and flow of circular visualizers.
 -   **Persistent Settings:** All your configurations are saved automatically.
@@ -79,6 +79,11 @@ Click the **gear icon** (top-right) to open the sidebar.
 -   **Starfield:** Twinkling stars scattered across the screen that react to frequency.
 -   **Shatter:** A pulsating core that explodes into particles on heavy beats.
 -   **Flower:** An organic, petal-like shape that blooms.
+-   **Matrix Rain:** Digital code drops that fall faster and brighter with the music.
+-   **DNA Helix:** Intertwining sine waves forming a double helix structure.
+-   **Pixel Grid:** A retro grid of blocks that light up based on frequency intensity.
+-   **Radar:** A sweeping radial scanner effect.
+-   **Waves:** Multiple stacked 3D sine waves mimicking an ocean.
 -   **Frequency Wave:** A smooth line graph of the audio spectrum.
 -   **Circular Waveform:** The raw audio waveform wrapped into a circle.
 -   **Waveform:** Classic oscilloscope line.
@@ -106,7 +111,11 @@ Click the **gear icon** (top-right) to open the sidebar.
 ### 🎨 Color & Style
 -   **Rainbow Mode:** Cycles through the color spectrum automatically.
 -   **Use OS Accent Color:** Matches system theme.
--   **Gradient Colors:** Manually build a gradient with up to 8 colors.
+-   **Gradient Colors:** 
+    -   **Manual:** Build a custom gradient with up to 8 colors.
+    -   **Extract from Image:** Upload an image to automatically generate a matching color palette.
+-   **Gradient Background:** Applies the current gradient to the background (affected by Motion Blur).
+-   **Background:** Sets the solid background color (if Gradient Background is off).
 -   **Sensitivity:** Reactivity multiplier. High = more movement.
 -   **Motion Blur:** Controls the trail length. Low slider = Long trails. High slider = Sharp/Fast.
 
