@@ -2,7 +2,7 @@
 
 
 # EchoesRealm Visualizer
-
+## Note: I still trying to figure out how to upload all the files at once from my PC, so the source code will be a couple updates behind, compared to the releases.
 A high-performance, real-time music visualizer built with Electron. It captures audio from your system or microphone and renders it into a variety of stunning, deeply customizable visual patterns. This is a pure, lightweight visualizer designed for live performance and desktop aesthetics.
 
 ## Features
