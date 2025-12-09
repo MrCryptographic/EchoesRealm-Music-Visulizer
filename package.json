@@ -1,6 +1,6 @@
 {
   "name": "echoesrealm-visualizer",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "A high-performance dynamic music visualizer",
   "main": "main.js",
   "author": "EchoesRealmArrow",
