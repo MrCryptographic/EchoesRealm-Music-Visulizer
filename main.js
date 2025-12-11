@@ -1,12 +1,11 @@
 const { app, BrowserWindow, ipcMain, dialog, desktopCapturer, systemPreferences } = require('electron');
 const path = require('path');
 
-// --- IPC HANDLERS ---
+// Allow audio to capture/play without waiting for a user gesture
+app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
 
-// Get screen sources for the visualizer
 ipcMain.handle('get-sources', async () => await desktopCapturer.getSources({ types: ['screen'] }));
 
-// Get OS accent color (Windows only, defaults to blue on others)
 ipcMain.handle('get-accent-color', () => {
   if (process.platform === 'win32') {
     return systemPreferences.getAccentColor();
@@ -14,7 +13,6 @@ ipcMain.handle('get-accent-color', () => {
   return '#3498db'; // Default for Linux/Mac
 });
 
-// Get Metadata from audio files (for the UI display)
 ipcMain.handle('get-audio-metadata', async (event, filePath) => {
   try {
     const { parseFile } = await import('music-metadata');
@@ -26,14 +24,11 @@ ipcMain.handle('get-audio-metadata', async (event, filePath) => {
   }
 });
 
-// Open file dialog (for selecting profile pics or local audio to play)
 ipcMain.handle('show-open-dialog', async (event, options) => {
-  const focusedWindow = BrowserWindow.getFocusedWindow();
-  const result = await dialog.showOpenDialog(focusedWindow, options);
-  return result.filePaths;
+    const focusedWindow = BrowserWindow.getFocusedWindow();
+    const result = await dialog.showOpenDialog(focusedWindow, options);
+    return result.filePaths;
 });
-
-// --- WINDOW MANAGEMENT ---
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -42,23 +37,13 @@ function createWindow() {
     backgroundColor: '#000',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
-                                contextIsolation: true,
-                                nodeIntegration: false,
+      contextIsolation: true,
+      nodeIntegration: false,
     }
   });
   win.loadFile('index.html');
 }
 
 app.whenReady().then(createWindow);
-
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
-});
-
-app.on('activate', () => {
-  if (BrowserWindow.getAllWindows().length === 0) {
-    createWindow();
-  }
-});
+app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
+app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });

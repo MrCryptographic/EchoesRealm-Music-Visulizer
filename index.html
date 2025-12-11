@@ -7,18 +7,41 @@
 </head>
 <body>
     <canvas id="visualizerCanvas"></canvas>
-    <audio id="audioPlayer" style="display: none;"></audio>
+    
     <div id="metadataDisplay" class="hidden"><p id="metaTitle"></p><p id="metaArtist"></p></div>
-    <div id="startMessage"><h1>Click Anywhere to Start</h1><p>This will request audio capture permission.</p></div>
     <div id="silentMessage" class="hidden"></div>
-    <div id="uiContainer"><div id="settingsButton" class="ui-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.44,0.17-0.48-0.41L9.2,5.77C8.61,6.01,8.08,6.33,7.58,6.71L5.2,5.75C4.98,5.68,4.73,5.75,4.61,5.97L2.69,9.28 c-0.11,0.2-0.06,0.47,0.12,0.61l2.03,1.58C4.78,11.7,4.76,12,4.76,12.3c0,0.3,0.02,0.6,0.07,0.9l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.56 c0.04,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.48-0.41l0.36-2.56c0.59-0.24,1.12-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0.01,0.59-0.22l1.92-3.32c0.11-0.2,0.06-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z" /></svg></div></div>
+    
+    <!-- Settings Button -->
+    <div id="settingsButton" class="ui-button visible"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.44,0.17-0.48-0.41L9.2,5.77C8.61,6.01,8.08,6.33,7.58,6.71L5.2,5.75C4.98,5.68,4.73,5.75,4.61,5.97L2.69,9.28 c-0.11,0.2-0.06,0.47,0.12,0.61l2.03,1.58C4.78,11.7,4.76,12,4.76,12.3c0,0.3,0.02,0.6,0.07,0.9l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.56 c0.04,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.48-0.41l0.36-2.56c0.59-0.24,1.12-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0.01,0.59-0.22l1.92-3.32c0.11-0.2,0.06-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z" /></svg></div>
 
     <div id="settingsPanel" class="sidebar">
         <div class="sidebar-header"><h2>Settings</h2><button id="closeButton">&times;</button></div>
         <div class="sidebar-content">
             <div class="setting-row"><label for="audioSourceSelect">Audio Source</label><select id="audioSourceSelect"><option value="system">System Audio</option><option value="microphone">Microphone</option></select></div>
             <div id="microphoneSelectRow" class="setting-row hidden"><label for="microphoneSelect">Microphone</label><select id="microphoneSelect"></select></div>
-            <div class="setting-row"><label for="visualizerSelect">Visualizer Type</label><select id="visualizerSelect"><option value="centerBars">Center Bars</option><option value="upwardBars">Upward Bars</option><option value="dualSidedBars">Dual-Sided Bars</option><option value="floorAndCeiling">Floor & Ceiling</option><option value="circle">Circular Lines</option><option value="sunburst">Sunburst</option><option value="spokes">Spokes</option><option value="blob">Blob</option><option value="polygons">Polygons</option><option value="nestedPolygons">Nested Polygons</option><option value="starfield">Starfield</option><option value="shatter">Shatter</option><option value="flower">Flower</option><option value="frequencyWave">Frequency Wave</option><option value="circularWaveform">Circular Waveform</option><option value="waveform">Waveform</option></select></div>
+            <div class="setting-row"><label for="visualizerSelect">Visualizer Type</label><select id="visualizerSelect">
+                <option value="centerBars">Center Bars</option>
+                <option value="upwardBars">Upward Bars</option>
+                <option value="dualSidedBars">Dual-Sided Bars</option>
+                <option value="floorAndCeiling">Floor & Ceiling</option>
+                <option value="circle">Circular Lines</option>
+                <option value="sunburst">Sunburst</option>
+                <option value="spokes">Spokes</option>
+                <option value="blob">Blob</option>
+                <option value="polygons">Polygons</option>
+                <option value="nestedPolygons">Nested Polygons</option>
+                <option value="starfield">Starfield</option>
+                <option value="shatter">Shatter</option>
+                <option value="flower">Flower</option>
+                <option value="matrix">Matrix Rain</option>
+                <option value="helix">DNA Helix</option>
+                <option value="pixelGrid">Pixel Grid</option>
+                <option value="radar">Radar</option>
+                <option value="waves">Waves</option>
+                <option value="frequencyWave">Frequency Wave</option>
+                <option value="circularWaveform">Circular Waveform</option>
+                <option value="waveform">Waveform</option>
+            </select></div>
             
             <fieldset id="visualizerOptionsFieldset" class="hidden"><legend>Visualizer Options</legend>
                 <div class="setting-row"><label for="fillCheckbox">Fill Shapes</label><input type="checkbox" id="fillCheckbox"></div>
@@ -28,13 +51,18 @@
             
             <fieldset><legend>Overlay Image</legend><div class="setting-row"><label>Profile Image</label><div class="button-group-inline"><button id="selectPfpButton" class="action-button">Select</button><button id="clearPfpButton" class="action-button">Clear</button></div></div><img id="pfpPreview" src="#" class="hidden"/></fieldset>
             
-            <hr><div class="setting-row"><label for="dynamicCheckbox">Enable Dynamic Effects</label><input type="checkbox" id="dynamicCheckbox"></div>
+            <div class="setting-row"><label for="dynamicCheckbox">Enable Dynamic Effects</label><input type="checkbox" id="dynamicCheckbox"></div>
             <fieldset id="dynamicEffectsFieldset"><legend>Effects Engine</legend>
                 <div class="setting-row"><label for="shakeSlider">Shake Intensity</label><input type="range" id="shakeSlider" min="0" max="50" step="1"></div>
                 <div class="setting-row"><label for="aberrationSlider">Color Aberration</label><input type="range" id="aberrationSlider" min="0" max="20" step="1"></div>
                 <div class="setting-row"><label for="glowSlider">Glow Intensity</label><input type="range" id="glowSlider" min="0" max="50" step="1"></div>
                 <div class="setting-row"><label for="glowColor">Glow Color</label><input type="color" id="glowColor"></div>
                 <div class="setting-row"><label for="scanlineSlider">Scan Line Intensity</label><input type="range" id="scanlineSlider" min="0" max="50" step="1"></div>
+                <hr>
+                <div class="setting-row"><label for="particleCheckbox">Enable Particles</label><input type="checkbox" id="particleCheckbox"></div>
+                <div class="setting-row"><label for="particleAmountSlider">Particle Amount</label><input type="range" id="particleAmountSlider" min="0" max="10" step="1"></div>
+                <div class="setting-row"><label for="particleGravitySlider">Particle Gravity</label><input type="range" id="particleGravitySlider" min="0" max="20" step="1"></div>
+                <div class="setting-row"><label for="particleLifespanSlider">Particle Lifespan</label><input type="range" id="particleLifespanSlider" min="60" max="300" step="10"></div>
             </fieldset>
             <hr>
             
@@ -42,7 +70,16 @@
             <div id="rainbowControls" class="hidden"><div class="setting-row"><label for="rainbowSpeedSlider">Rainbow Speed</label><input type="range" id="rainbowSpeedSlider" min="1" max="20" value="5" step="1"></div></div>
 
             <div class="setting-row"><label for="accentColorCheckbox">Use OS Accent Color</label><input type="checkbox" id="accentColorCheckbox"></div>
-            <div id="gradientControls"><label>Gradient Colors</label><div id="gradientPickerContainer"></div><button id="addColorButton" class="action-button small">+</button></div>
+            <div id="gradientControls">
+                <label>Gradient Colors</label>
+                <div id="gradientPickerContainer"></div>
+                <div class="button-group-inline">
+                    <button id="addColorButton" class="action-button small">+</button>
+                    <button id="extractColorsButton" class="action-button small">Extract from Image</button>
+                </div>
+            </div>
+            
+            <div class="setting-row"><label for="gradientBgCheckbox">Gradient Background</label><input type="checkbox" id="gradientBgCheckbox"></div>
             <div class="setting-row"><label for="backgroundColor">Background</label><input type="color" id="backgroundColor"></div>
             
             <div class="setting-row"><label for="sensitivitySlider">Sensitivity</label><input type="range" id="sensitivitySlider" min="1" max="5" step="0.1"></div>

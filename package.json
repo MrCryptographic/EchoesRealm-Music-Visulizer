@@ -1,13 +1,15 @@
 {
   "name": "echoesrealm-visualizer",
-  "version": "2.1.1",
+  "version": "2.2.0",
   "description": "A high-performance dynamic music visualizer",
   "main": "main.js",
   "author": "EchoesRealmArrow",
   "license": "MIT",
   "scripts": {
     "start": "electron . --no-sandbox",
-    "build": "electron-builder --linux --win"
+    "build:linux": "electron-builder --linux deb",
+    "build:win": "electron-builder --win nsis",
+    "build:all": "electron-builder --linux deb --win nsis"
   },
   "build": {
     "appId": "com.echoesrealm.visualizer",
@@ -21,59 +23,21 @@
       "!src/*"
     ],
     "linux": {
-      "target": [
-        {
-          "target": "AppImage",
-          "arch": [
-            "x64",
-            "arm64"
-          ]
-        },
-        {
-          "target": "deb",
-          "arch": [
-            "x64",
-            "arm64",
-            "armv7l"
-          ]
-        },
-        {
-          "target": "rpm",
-          "arch": [
-            "x64",
-            "arm64"
-          ]
-        }
-      ],
+      "target": ["deb", "AppImage"],
       "category": "Audio",
       "icon": "build/icon.png",
       "maintainer": "EchoesRealmArrow"
     },
     "win": {
-      "target": [
-        {
-          "target": "nsis",
-          "arch": [
-            "x64",
-            "ia32",
-            "arm64"
-          ]
-        }
-      ],
+      "target": "nsis",
       "icon": "build/icon.png"
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true,
-      "deleteAppDataOnUninstall": true
     }
   },
   "dependencies": {
     "music-metadata": "^7.14.0"
   },
   "devDependencies": {
-    "electron": "^39.2.6",
+    "electron": "^28.2.0",
     "electron-builder": "^24.9.1"
   }
 }
