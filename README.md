@@ -48,12 +48,25 @@ A high-performance, real-time music visualizer built with Electron. It captures 
     npm start
     ```
 
-### 🐧 Linux Audio Troubleshooting (PipeWire)
-If the visualizer doesn't move when "System Audio" is selected:
-1.  Install **pavucontrol**: `sudo apt install pavucontrol`
-2.  Run the visualizer.
-3.  Open **pavucontrol**, go to the **Recording** tab.
-4.  Find "Electron" and change the source to **"Monitor of [Your Audio Output]"**.
+---
+
+## 🐧 Linux Audio Troubleshooting (Universal)
+
+If you select **"System Audio"** but the visualizer doesn't move (or it only reacts to your microphone):
+
+Linux privacy settings often default applications to the Microphone. You must manually route the System Audio (Monitor) to the application.
+
+1.  **Install PulseAudio Volume Control:**
+    *   **Mint/Ubuntu/Debian/Neon:** `sudo apt install pavucontrol`
+    *   **Arch/Manjaro:** `sudo pacman -S pavucontrol`
+    *   **Fedora:** `sudo dnf install pavucontrol`
+2.  **Run the Visualizer** and play some music.
+3.  Open **pavucontrol** (PulseAudio Volume Control) from your app menu.
+4.  Go to the **Recording** tab.
+5.  Find **"EchoesRealm Visualizer"** (or "Electron").
+6.  Click the dropdown next to it and select **"Monitor of [Your Audio Output]"**.
+
+The visualizer will immediately start reacting to your system audio.
 
 ---
 
@@ -117,6 +130,7 @@ Click the **gear icon** (top-right) to open the sidebar.
 -   **Gradient Background:** Applies the current gradient to the background (affected by Motion Blur).
 -   **Background:** Sets the solid background color (if Gradient Background is off).
 -   **Sensitivity:** Reactivity multiplier. High = more movement.
+-   **Responsiveness (Smoothing):** Controls how snappy or smooth the bars move.
 -   **Motion Blur:** Controls the trail length. Low slider = Long trails. High slider = Sharp/Fast.
 
 ---
