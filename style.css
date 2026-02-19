@@ -5,14 +5,18 @@ body, h1, h2, h3, p, label, button, select, input { color: var(--text-color); }
 #settingsButton svg { fill: var(--text-color); }
 #visualizerCanvas { display: block; width: 100%; height: 100%; }
 
-#silentMessage { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; transition: opacity 0.5s ease; font-size: 1.8em; opacity: 0.7; text-shadow: 0 0 10px #000; pointer-events: none; z-index: 50; }
+/* Metadata */
 #metadataDisplay { position: absolute; bottom: 20px; left: 20px; text-shadow: 0 0 8px rgba(0, 0, 0, 0.8); z-index: 50; transition: opacity 0.5s ease; }
 #metadataDisplay p { margin: 0; line-height: 1.2; } #metaTitle { font-size: 1.8em; font-weight: bold; } #metaArtist { font-size: 1.2em; opacity: 0.8; }
 .hidden { opacity: 0; pointer-events: none; }
+
+/* Settings Button */
 #settingsButton { position: absolute; top: 20px; right: 20px; padding: 0; width: 40px; height: 40px; border-radius: 50%; z-index: 100; opacity: 0; pointer-events: none; display: flex; align-items: center; justify-content: center; cursor: pointer; background-color: rgba(30, 30, 30, 0.7); transition: opacity 0.5s ease, background-color 0.2s ease; border: none; }
 #settingsButton:hover { background-color: rgba(50, 50, 50, 0.9); }
 #settingsButton.visible { opacity: 1; pointer-events: all; }
 #settingsButton svg { width: 24px; height: 24px; }
+
+/* Sidebar */
 .sidebar { position: absolute; top: 0; right: 0; width: 450px; max-width: 100vw; height: 100vh; background-color: rgba(26, 26, 26, 0.95); backdrop-filter: blur(10px); box-shadow: -10px 0 30px rgba(0,0,0,0.5); z-index: 102; transform: translateX(100%); transition: transform 0.4s ease-in-out; display: flex; flex-direction: column; }
 .sidebar.open { transform: translateX(0); }
 .sidebar-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background-color: rgba(44, 44, 44, 0.8); }
@@ -20,6 +24,7 @@ body, h1, h2, h3, p, label, button, select, input { color: var(--text-color); }
 .sidebar-content { padding: 20px; overflow-y: auto; flex-grow: 1; }
 #closeButton { position: static; font-size: 2em; padding: 0 10px; background: none; border: none; cursor: pointer; opacity: 0.7; } #closeButton:hover { opacity: 1; }
 
+/* Controls */
 .setting-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
 .sidebar hr { border: none; border-top: 1px solid #444; margin: 20px 0; }
 label { font-size: 1em; }
