@@ -16,7 +16,6 @@
 
     <canvas id="visualizerCanvas"></canvas>
     <div id="metadataDisplay" class="hidden"><p id="metaTitle"></p><p id="metaArtist"></p></div>
-    <div id="silentMessage" class="hidden"></div>
     
     <div id="uiContainer">
         <div id="settingsButton" class="ui-button">
@@ -44,6 +43,9 @@
                 <option value="starfield">Starfield</option>
                 <option value="shatter">Shatter</option>
                 <option value="flower">Flower</option>
+                <option value="barcode">Barcode</option>
+                <option value="spiral">Spiral</option>
+                <option value="river">Audio River</option>
                 <option value="matrix">Matrix Rain</option>
                 <option value="helix">DNA Helix</option>
                 <option value="pixelGrid">Pixel Grid</option>
@@ -62,7 +64,7 @@
             
             <fieldset><legend>Overlay Image</legend><div class="setting-row"><label>Profile Image</label><div class="button-group-inline"><button id="selectPfpButton" class="action-button">Select</button><button id="clearPfpButton" class="action-button">Clear</button></div></div><img id="pfpPreview" src="#" class="hidden"/></fieldset>
             
-            <div class="setting-row"><label for="dynamicCheckbox">Enable Dynamic Effects</label><input type="checkbox" id="dynamicCheckbox"></div>
+            <hr><div class="setting-row"><label for="dynamicCheckbox">Enable Dynamic Effects</label><input type="checkbox" id="dynamicCheckbox"></div>
             <fieldset id="dynamicEffectsFieldset"><legend>Effects Engine</legend>
                 <div class="setting-row"><label for="shakeSlider">Shake Intensity</label><input type="range" id="shakeSlider" min="0" max="50" step="1"></div>
                 <div class="setting-row"><label for="aberrationSlider">Color Aberration</label><input type="range" id="aberrationSlider" min="0" max="20" step="1"></div>
@@ -76,15 +78,7 @@
             <div id="rainbowControls" class="hidden"><div class="setting-row"><label for="rainbowSpeedSlider">Rainbow Speed</label><input type="range" id="rainbowSpeedSlider" min="1" max="20" value="5" step="1"></div></div>
 
             <div class="setting-row"><label for="accentColorCheckbox">Use OS Accent Color</label><input type="checkbox" id="accentColorCheckbox"></div>
-            <div id="gradientControls">
-                <label>Gradient Colors</label>
-                <div id="gradientPickerContainer"></div>
-                <div class="button-group-inline">
-                    <button id="addColorButton" class="action-button small">+</button>
-                    <button id="extractColorsButton" class="action-button small">Extract from Image</button>
-                </div>
-            </div>
-            
+            <div id="gradientControls"><label>Gradient Colors</label><div id="gradientPickerContainer"></div><div class="button-group-inline"><button id="addColorButton" class="action-button small">+</button><button id="extractColorsButton" class="action-button small">Extract from Image</button></div></div>
             <div class="setting-row"><label for="gradientBgCheckbox">Gradient Background</label><input type="checkbox" id="gradientBgCheckbox"></div>
             <div class="setting-row"><label for="backgroundColor">Background</label><input type="color" id="backgroundColor"></div>
             
