@@ -4,12 +4,14 @@
 
 A high-performance, real-time music visualizer built with Electron. It captures audio from your system or microphone and renders it into a variety of stunning, deeply customizable visual patterns. Designed for live performance, desktop customization, and visual aesthetics.
 
+## ⚠️ EPILEPSY WARNING
+**This application contains intense, rapid flashing lights, geometric patterns, and visual effects that may trigger seizures for people with photosensitive epilepsy.** You will be prompted to acknowledge this risk upon launching the application. Viewer discretion is strongly advised.
+
 ## Features
 
 -   **Live Audio Capture:** Visualize audio from any source (Spotify, YouTube, System Sounds) or a microphone.
--   **Massive Visualizer Library:** Choose from **21 unique visualizer styles**, ranging from classic bars to abstract geometry, digital rain, and organic shapes.
+-   **Massive Visualizer Library:** Choose from **21 unique visualizer styles**, ranging from classic bars to abstract geometry, digital rain, and mandalas.
 -   **Dynamic Effects Engine:** A robust post-processing engine adding screen shake, chromatic aberration, glows, and scanlines that react to audio intensity.
--   **Particle System:** An integrated physics-based particle system where sparks fly off the visualizer beat.
 -   **Profile Picture Overlay:** Upload a custom image to display in the center of the visualizer.
 -   **Deep Customization:**
     -   **Rainbow Mode:** Automatically cycles through colors.
@@ -17,8 +19,9 @@ A high-performance, real-time music visualizer built with Electron. It captures 
     -   **Gradient Backgrounds:** Apply your color palette to the background with dynamic fading.
     -   **OS Accent Sync:** Match your visualizer to your system colors.
     -   **Rotation & Direction:** Control the speed and flow of circular visualizers.
+    -   **Smoothing:** Control the visual responsiveness (snappy vs. fluid).
 -   **Persistent Settings:** All your configurations are saved automatically.
--   **Cross-Platform:** Runs on Windows and Linux.
+-   **Cross-Platform:** Runs natively on Windows and Linux.
 
 ---
 
@@ -48,25 +51,12 @@ A high-performance, real-time music visualizer built with Electron. It captures 
     npm start
     ```
 
----
-
-## 🐧 Linux Audio Troubleshooting (Universal)
-
-If you select **"System Audio"** but the visualizer doesn't move (or it only reacts to your microphone):
-
-Linux privacy settings often default applications to the Microphone. You must manually route the System Audio (Monitor) to the application.
-
-1.  **Install PulseAudio Volume Control:**
-    *   **Mint/Ubuntu/Debian/Neon:** `sudo apt install pavucontrol`
-    *   **Arch/Manjaro:** `sudo pacman -S pavucontrol`
-    *   **Fedora:** `sudo dnf install pavucontrol`
-2.  **Run the Visualizer** and play some music.
-3.  Open **pavucontrol** (PulseAudio Volume Control) from your app menu.
-4.  Go to the **Recording** tab.
-5.  Find **"EchoesRealm Visualizer"** (or "Electron").
-6.  Click the dropdown next to it and select **"Monitor of [Your Audio Output]"**.
-
-The visualizer will immediately start reacting to your system audio.
+### 🐧 Linux Audio Troubleshooting (PipeWire)
+If the visualizer doesn't move when "System Audio" is selected:
+1.  Install **pavucontrol**: `sudo apt install pavucontrol`
+2.  Run the visualizer and accept the warning prompt.
+3.  Open **pavucontrol**, go to the **Recording** tab.
+4.  Find "Electron" and change the source to **"Monitor of[Your Audio Output]"**.
 
 ---
 
@@ -89,8 +79,9 @@ Click the **gear icon** (top-right) to open the sidebar.
 -   **Blob:** A solid, organic, pulsating circle.
 -   **Polygons:** Rotating concentric shapes (triangle, square, pentagon) reacting to Bass, Mids, and Highs.
 -   **Nested Polygons:** A hypnotic tunnel of rotating triangles.
+-   **Kaleidoscope:** Mirrored segments reflecting outward for a pulsing mandala effect.
 -   **Starfield:** Twinkling stars scattered across the screen that react to frequency.
--   **Shatter:** A pulsating core that explodes into particles on heavy beats.
+-   **Shatter:** A pulsating core that breaks apart on heavy beats.
 -   **Flower:** An organic, petal-like shape that blooms.
 -   **Matrix Rain:** Digital code drops that fall faster and brighter with the music.
 -   **DNA Helix:** Intertwining sine waves forming a double helix structure.
@@ -116,10 +107,6 @@ Click the **gear icon** (top-right) to open the sidebar.
 -   **Glow Intensity:** Radius of the bloom/glow effect.
 -   **Glow Color:** The color of the glow shadow.
 -   **Scan Line Intensity:** CRT-style horizontal lines overlay.
--   **Enable Particles:** Turns the particle physics system on/off.
-    -   **Amount:** Particles spawned per beat.
-    -   **Gravity:** How fast particles fall.
-    -   **Lifespan:** How long particles fade out.
 
 ### 🎨 Color & Style
 -   **Rainbow Mode:** Cycles through the color spectrum automatically.
@@ -130,7 +117,7 @@ Click the **gear icon** (top-right) to open the sidebar.
 -   **Gradient Background:** Applies the current gradient to the background (affected by Motion Blur).
 -   **Background:** Sets the solid background color (if Gradient Background is off).
 -   **Sensitivity:** Reactivity multiplier. High = more movement.
--   **Responsiveness (Smoothing):** Controls how snappy or smooth the bars move.
+-   **Responsiveness (Smoothing):** Controls how snappy or smooth the bars move. 0 = jerky/instant, High = smooth/flowing.
 -   **Motion Blur:** Controls the trail length. Low slider = Long trails. High slider = Sharp/Fast.
 
 ---

@@ -7,9 +7,7 @@
   "license": "MIT",
   "scripts": {
     "start": "electron . --no-sandbox",
-    "build:linux": "electron-builder --linux deb",
-    "build:win": "electron-builder --win nsis",
-    "build:all": "electron-builder --linux deb --win nsis"
+    "build": "electron-builder"
   },
   "build": {
     "appId": "com.echoesrealm.visualizer",
@@ -23,7 +21,7 @@
       "!src/*"
     ],
     "linux": {
-      "target": ["deb", "AppImage"],
+      "target": "deb",
       "category": "Audio",
       "icon": "build/icon.png",
       "maintainer": "EchoesRealmArrow"
