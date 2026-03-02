@@ -2,7 +2,7 @@
 
 # EchoesRealm Visualizer
 
-A high-performance, real-time music visualizer built with Electron. It captures audio from your system or microphone and renders it into a variety of stunning, deeply customizable visual patterns. Designed for live performance, desktop customization, and visual aesthetics.
+A high-performance, real-time music visualizer built with Electron. It captures audio from your system or microphone and renders it into a variety of stunning, deeply customizable visual patterns. This is a pure, lightweight visualizer designed for live performance, desktop customization, and visual aesthetics.
 
 ## ⚠️ EPILEPSY WARNING
 **This application contains intense, rapid flashing lights, geometric patterns, and visual effects that may trigger seizures for people with photosensitive epilepsy.** You will be prompted to acknowledge this risk upon launching the application. Viewer discretion is strongly advised.
@@ -10,8 +10,8 @@ A high-performance, real-time music visualizer built with Electron. It captures 
 ## Features
 
 -   **Live Audio Capture:** Visualize audio from any source (Spotify, YouTube, System Sounds) or a microphone.
--   **Massive Visualizer Library:** Choose from **21 unique visualizer styles**, ranging from classic bars to abstract geometry, digital rain, and mandalas.
--   **Dynamic Effects Engine:** A robust post-processing engine adding screen shake, chromatic aberration, glows, and scanlines that react to audio intensity.
+-   **Massive Visualizer Library:** Choose from **29 unique visualizer styles**, ranging from classic 3D bars and abstract geometry to digital rain and immersive hyperspace tunnels.
+-   **Dynamic Effects Engine:** A robust post-processing engine adding screen shake, chromatic aberration, glows, and CRT scanlines that react to audio intensity.
 -   **Profile Picture Overlay:** Upload a custom image to display in the center of the visualizer.
 -   **Deep Customization:**
     -   **Rainbow Mode:** Automatically cycles through colors.
@@ -19,50 +19,61 @@ A high-performance, real-time music visualizer built with Electron. It captures 
     -   **Gradient Backgrounds:** Apply your color palette to the background with dynamic fading.
     -   **OS Accent Sync:** Match your visualizer to your system colors.
     -   **Rotation & Direction:** Control the speed and flow of circular visualizers.
-    -   **Smoothing:** Control the visual responsiveness (snappy vs. fluid).
+    -   **Responsiveness:** Fine-tune audio smoothing (from perfectly fluid to instantly snappy).
+    -   **Smart Text Contrast:** UI text automatically switches between black and white to remain readable against any background.
 -   **Persistent Settings:** All your configurations are saved automatically.
--   **Cross-Platform:** Runs natively on Windows and Linux.
+-   **Cross-Platform Installers:** Easily build native `.exe`, `.deb`, `.rpm`, and `.AppImage` files.
 
 ---
 
-## Installation
+## Installation & Building
 
 ### Prerequisites
 
 -   **Node.js** & **npm**:
     -   **Windows/macOS:** Download the LTS version from [nodejs.org](https://nodejs.org/).
     -   **Linux:** Use **[nvm](https://github.com/nvm-sh/nvm)**. Avoid `sudo apt install npm` to prevent permission issues.
+    -   **Linux Cross-Compilation (Optional):** If you are on Linux and want to build the Windows `.exe`, you must install Wine (`sudo apt install wine wine64 wine32`).
 
-### Setup
+### Setup & Run (Development)
 
 1.  **Clone the repository:**
     ```bash
     git clone https://github.com/MrCryptographic/EchoesRealm-Music-Visualizer.git
     cd EchoesRealm-Visualizer
     ```
-
 2.  **Install dependencies:**
     ```bash
     npm install
     ```
-
 3.  **Run the app:**
     ```bash
     npm start
     ```
 
-### 🐧 Linux Audio Troubleshooting (PipeWire)
+### Packaging / Building Installers
+You can package the app into shareable installers using the built-in scripts:
+
+-   **Build for Linux** (`.deb`, `.AppImage`, `.rpm`): `npm run build:linux`
+-   **Build for Windows** (`.exe`): `npm run build:win`
+-   **Build for Everything:** `npm run build:all`
+
+*Compiled outputs will be located in the `dist/` folder.*
+
+---
+
+## 🐧 Linux Audio Troubleshooting (PipeWire / PulseAudio)
 If the visualizer doesn't move when "System Audio" is selected:
 1.  Install **pavucontrol**: `sudo apt install pavucontrol`
 2.  Run the visualizer and accept the warning prompt.
 3.  Open **pavucontrol**, go to the **Recording** tab.
-4.  Find "Electron" and change the source to **"Monitor of[Your Audio Output]"**.
+4.  Find "Electron" or "EchoesRealm" and change the source from your microphone to **"Monitor of [Your Audio Output]"**.
 
 ---
 
 ## Settings Guide
 
-Click the **gear icon** (top-right) to open the sidebar.
+Click the **gear icon** (top-right) to open the settings sidebar.
 
 ### 🎵 Audio
 -   **Audio Source:** Switch between `System Audio` (what you hear) and `Microphone`.
@@ -73,15 +84,21 @@ Click the **gear icon** (top-right) to open the sidebar.
 -   **Upward Bars:** Classic bars growing from the bottom up.
 -   **Dual-Sided Bars:** Bars growing from both top and bottom edges.
 -   **Floor & Ceiling:** Mirrored bars on top and bottom.
+-   **3D Bars:** Isometric 3D rectangular prisms with simulated light and shadow.
 -   **Circular Lines:** Lines radiating from a center circle.
 -   **Sunburst:** A connected, sharp star-shape expanding with the beat.
 -   **Spokes:** Defined rays reacting to bass and mids.
 -   **Blob:** A solid, organic, pulsating circle.
--   **Polygons:** Rotating concentric shapes (triangle, square, pentagon) reacting to Bass, Mids, and Highs.
+-   **Polygons:** Rotating concentric shapes (triangle, square, pentagon).
 -   **Nested Polygons:** A hypnotic tunnel of rotating triangles.
 -   **Kaleidoscope:** Mirrored segments reflecting outward for a pulsing mandala effect.
+-   **Tunnel:** A 3D infinite tunnel effect drawn with geometric rings.
+-   **Hyperspace:** 3D starfield rushing towards the camera, drawing constellation lines on heavy bass hits.
+-   **Wireframe Sphere:** A 3D globe that deforms its latitude and longitude lines to the audio spectrum.
+-   **Rings:** Segmented circular rings that warp and deform with the beat.
 -   **Starfield:** Twinkling stars scattered across the screen that react to frequency.
--   **Shatter:** A pulsating core that breaks apart on heavy beats.
+-   **Floating Dust:** Ambient particles that drift and aggressively speed up based on volume intensity.
+-   **Shatter:** A pulsating core that splinters into sharp, jagged shards on heavy beats.
 -   **Flower:** An organic, petal-like shape that blooms.
 -   **Matrix Rain:** Digital code drops that fall faster and brighter with the music.
 -   **DNA Helix:** Intertwining sine waves forming a double helix structure.
@@ -89,6 +106,7 @@ Click the **gear icon** (top-right) to open the sidebar.
 -   **Radar:** A sweeping radial scanner effect.
 -   **Waves:** Multiple stacked 3D sine waves mimicking an ocean.
 -   **Frequency Wave:** A smooth line graph of the audio spectrum.
+-   **Heartbeat:** An EKG-style line that exaggerates bass peaks.
 -   **Circular Waveform:** The raw audio waveform wrapped into a circle.
 -   **Waveform:** Classic oscilloscope line.
 
@@ -117,8 +135,8 @@ Click the **gear icon** (top-right) to open the sidebar.
 -   **Gradient Background:** Applies the current gradient to the background (affected by Motion Blur).
 -   **Background:** Sets the solid background color (if Gradient Background is off).
 -   **Sensitivity:** Reactivity multiplier. High = more movement.
--   **Responsiveness (Smoothing):** Controls how snappy or smooth the bars move. 0 = jerky/instant, High = smooth/flowing.
--   **Motion Blur:** Controls the trail length. Low slider = Long trails. High slider = Sharp/Fast.
+-   **Responsiveness (Smoothing):** Controls how snappy or smooth the bars move. `0` = jerky/instant, `High` = smooth/flowing.
+-   **Motion Blur:** Controls the trail length. Low slider = Long trails. High slider = Sharp/Fast fade.
 
 ---
 
@@ -126,6 +144,7 @@ Click the **gear icon** (top-right) to open the sidebar.
 -   **Electron** - App Framework
 -   **Web Audio API** - Audio Analysis
 -   **HTML5 Canvas** - Rendering
+-   **electron-builder** - Cross-Platform Packaging
 
 ## License
 MIT License
