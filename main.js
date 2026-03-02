@@ -1,5 +1,6 @@
 const { app, BrowserWindow, ipcMain, dialog, desktopCapturer, systemPreferences } = require('electron');
 const path = require('path');
+const fs = require('fs'); // Added fs to read the image file natively
 
 // Allow audio to capture/play without waiting for a user gesture
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
@@ -28,6 +29,18 @@ ipcMain.handle('show-open-dialog', async (event, options) => {
     const focusedWindow = BrowserWindow.getFocusedWindow();
     const result = await dialog.showOpenDialog(focusedWindow, options);
     return result.filePaths;
+});
+
+// NEW: Reads the image file securely to avoid Canvas CORS errors
+ipcMain.handle('read-file-base64', async (event, filePath) => {
+    try {
+        const ext = path.extname(filePath).substring(1) || 'png';
+        const base64 = fs.readFileSync(filePath, 'base64');
+        return `data:image/${ext};base64,${base64}`;
+    } catch (err) {
+        console.error("Failed to read image:", err);
+        return null;
+    }
 });
 
 function createWindow() {

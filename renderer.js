@@ -1,45 +1,6 @@
 window.addEventListener('DOMContentLoaded', () => {
     // --- DOM ELEMENT REFERENCES ---
-    const canvas = document.getElementById('visualizerCanvas');
-    const ctx = canvas.getContext('2d');
-    const epilepsyWarning = document.getElementById('epilepsyWarning');
-    const acceptWarningButton = document.getElementById('acceptWarningButton');
-    const uiContainer = document.getElementById('uiContainer');
-    const settingsButton = document.getElementById('settingsButton');
-    const settingsPanel = document.getElementById('settingsPanel');
-    const closeSettingsButton = document.getElementById('closeButton');
-    const visualizerSelect = document.getElementById('visualizerSelect');
-    const visualizerOptionsFieldset = document.getElementById('visualizerOptionsFieldset');
-    const fillCheckbox = document.getElementById('fillCheckbox');
-    const directionSelect = document.getElementById('directionSelect');
-    const rotationSlider = document.getElementById('rotationSlider');
-    const selectPfpButton = document.getElementById('selectPfpButton');
-    const clearPfpButton = document.getElementById('clearPfpButton');
-    const pfpPreview = document.getElementById('pfpPreview');
-    const dynamicCheckbox = document.getElementById('dynamicCheckbox');
-    const dynamicEffectsFieldset = document.getElementById('dynamicEffectsFieldset');
-    const shakeSlider = document.getElementById('shakeSlider');
-    const aberrationSlider = document.getElementById('aberrationSlider');
-    const glowSlider = document.getElementById('glowSlider');
-    const glowColor = document.getElementById('glowColor');
-    const scanlineSlider = document.getElementById('scanlineSlider');
-    const rainbowCheckbox = document.getElementById('rainbowCheckbox');
-    const rainbowControls = document.getElementById('rainbowControls');
-    const rainbowSpeedSlider = document.getElementById('rainbowSpeedSlider');
-    const accentColorCheckbox = document.getElementById('accentColorCheckbox');
-    const gradientControls = document.getElementById('gradientControls');
-    const gradientPickerContainer = document.getElementById('gradientPickerContainer');
-    const addColorButton = document.getElementById('addColorButton');
-    const extractColorsButton = document.getElementById('extractColorsButton');
-    const backgroundColorInput = document.getElementById('backgroundColor');
-    const gradientBgCheckbox = document.getElementById('gradientBgCheckbox');
-    const sensitivitySlider = document.getElementById('sensitivitySlider');
-    const smoothingSlider = document.getElementById('smoothingSlider');
-    const trailSlider = document.getElementById('trailSlider');
-    const audioSourceSelect = document.getElementById('audioSourceSelect');
-    const microphoneSelectRow = document.getElementById('microphoneSelectRow');
-    const microphoneSelect = document.getElementById('microphoneSelect');
-    const silentMessage = document.getElementById('silentMessage');
+    const canvas = document.getElementById('visualizerCanvas'), ctx = canvas.getContext('2d'), epilepsyWarning = document.getElementById('epilepsyWarning'), acceptWarningButton = document.getElementById('acceptWarningButton'), uiContainer = document.getElementById('uiContainer'), settingsButton = document.getElementById('settingsButton'), settingsPanel = document.getElementById('settingsPanel'), closeSettingsButton = document.getElementById('closeButton'), visualizerOptionsFieldset = document.getElementById('visualizerOptionsFieldset'), fillCheckbox = document.getElementById('fillCheckbox'), directionSelect = document.getElementById('directionSelect'), rotationSlider = document.getElementById('rotationSlider'), selectPfpButton = document.getElementById('selectPfpButton'), clearPfpButton = document.getElementById('clearPfpButton'), pfpPreview = document.getElementById('pfpPreview'), dynamicEffectsFieldset = document.getElementById('dynamicEffectsFieldset'), visualizerSelect = document.getElementById('visualizerSelect'), dynamicCheckbox = document.getElementById('dynamicCheckbox'), shakeSlider = document.getElementById('shakeSlider'), aberrationSlider = document.getElementById('aberrationSlider'), glowSlider = document.getElementById('glowSlider'), glowColor = document.getElementById('glowColor'), scanlineSlider = document.getElementById('scanlineSlider'), accentColorCheckbox = document.getElementById('accentColorCheckbox'), gradientControls = document.getElementById('gradientControls'), gradientPickerContainer = document.getElementById('gradientPickerContainer'), addColorButton = document.getElementById('addColorButton'), extractColorsButton = document.getElementById('extractColorsButton'), backgroundColorInput = document.getElementById('backgroundColor'), gradientBgCheckbox = document.getElementById('gradientBgCheckbox'), sensitivitySlider = document.getElementById('sensitivitySlider'), smoothingSlider = document.getElementById('smoothingSlider'), trailSlider = document.getElementById('trailSlider'), metadataDisplay = document.getElementById('metadataDisplay'), metaTitle = document.getElementById('metaTitle'), metaArtist = document.getElementById('metaArtist'), silentMessage = document.getElementById('silentMessage'), audioSourceSelect = document.getElementById('audioSourceSelect'), microphoneSelectRow = document.getElementById('microphoneSelectRow'), microphoneSelect = document.getElementById('microphoneSelect'), rainbowCheckbox = document.getElementById('rainbowCheckbox'), rainbowControls = document.getElementById('rainbowControls'), rainbowSpeedSlider = document.getElementById('rainbowSpeedSlider');
 
     // --- GLOBAL STATE ---
     let audioContext, analyser, frequencyData, timeDomainData;
@@ -70,14 +31,10 @@ window.addEventListener('DOMContentLoaded', () => {
 
     // This is the trigger. It only happens when the user clicks "I Accept"
     acceptWarningButton.addEventListener('click', async () => {
-        // 1. Hide the warning screen
         epilepsyWarning.style.opacity = '0';
         setTimeout(() => { epilepsyWarning.style.display = 'none'; }, 500);
-        
-        // 2. Show the settings button
         uiContainer.classList.add('visible');
         
-        // 3. Start the audio engine
         await startOrUpdateAudioSource();
         await populateMicrophoneList();
         updateAudioSourceUI();
@@ -175,19 +132,10 @@ window.addEventListener('DOMContentLoaded', () => {
         sunburst: (c, o=0) => { const l=Math.floor(frequencyData.length/2), hX=canvas.width/2+o, hY=canvas.height/2, C=c||getDrawColor(0.5); settings.filledShapes?ctx.fillStyle=C:ctx.strokeStyle=C; ctx.lineWidth=3; ctx.beginPath(); for(let i=1;i<l;i++){ const H=frequencyData[i]*(settings.sensitivity/1.5), a=(i/l)*2*Math.PI, x=hX+Math.cos(a)*H, y=hY+Math.sin(a)*H; i===1?ctx.moveTo(x,y):ctx.lineTo(x,y); } ctx.closePath(); settings.filledShapes?ctx.fill():ctx.stroke();},
         spokes: (c, o=0) => { const l=Math.floor(frequencyData.length/4), hX=canvas.width/2+o, hY=canvas.height/2; ctx.lineWidth=2; for(let i=1;i<l;i+=2){ const H=frequencyData[i]*settings.sensitivity, a=(i/l)*2*Math.PI, C=c||getDrawColor(i/l); ctx.strokeStyle=C; const rEnd=50+H; const sX=hX+Math.cos(a)*50, sY=hY+Math.sin(a)*50, eX=hX+Math.cos(a)*rEnd, eY=hY+Math.sin(a)*rEnd; ctx.beginPath(); ctx.moveTo(sX,sY); ctx.lineTo(eX,eY); ctx.stroke(); }},
         blob: (c, o=0) => { const l=Math.floor(frequencyData.length/2), hX=canvas.width/2+o, hY=canvas.height/2, C=c||getDrawColor(0.5); settings.filledShapes?ctx.fillStyle=C:ctx.strokeStyle=C; ctx.lineWidth=3; ctx.beginPath(); for(let i=1;i<l;i++){ const H=frequencyData[i]*(settings.sensitivity/1.5), r=150+H, a=(i/l)*2*Math.PI, x=hX+Math.cos(a)*r, y=hY+Math.sin(a)*r; i===1?ctx.moveTo(x,y):ctx.lineTo(x,y); } ctx.closePath(); settings.filledShapes?ctx.fill():ctx.stroke();},
-        centerBars: (c, o=0) => { const l=frequencyData.length, w=(canvas.width/2)/(l/2), h=canvas.width/2; for(let i=0;i<l/2;i++){ const H=frequencyData[i]*settings.sensitivity, C=c||getDrawColor(i/(l/2)); ctx.fillStyle=C; const x1=h+(i*w)+o, x2=h-(i*w)-w+o; ctx.fillRect(x1,canvas.height/2-H/2,w,H); ctx.fillRect(x2,canvas.height/2-H/2,w,H); } },
-        upwardBars: (c, o=0) => { const l=frequencyData.length, w=canvas.width/l; for(let i=0;i<l;i++){ const H=frequencyData[i]*settings.sensitivity, C=c||getDrawColor(i/l); ctx.fillStyle=C; const x=i*w+o; ctx.fillRect(x,canvas.height,w,-H); }},
-        dualSidedBars: (c, o=0) => { const l=frequencyData.length, w=canvas.width/l; for(let i=0;i<l;i++){ const H=frequencyData[i]*settings.sensitivity, C=c||getDrawColor(i/l); ctx.fillStyle=C; const x=i*w+o; ctx.fillRect(x,0,w,H/2); ctx.fillRect(x,canvas.height,w,-H/2); }},
-        floorAndCeiling: (c, o=0) => { const l=Math.floor(frequencyData.length/2), w=canvas.width/l; for(let i=0;i<l;i++){ const H=frequencyData[i]*settings.sensitivity, C=c||getDrawColor(i/l); ctx.fillStyle=C; const x=i*w+o; ctx.fillRect(x,0,w,H); ctx.fillRect(canvas.width-x-w,canvas.height,w,-H); }},
-        circle: (c, o=0) => { const l=frequencyData.length, hX=canvas.width/2+o, hY=canvas.height/2; ctx.lineWidth=4; for(let i=1;i<l;i++){ const H=frequencyData[i]*(settings.sensitivity/2), a=(i/l)*2*Math.PI, C=c||getDrawColor(i/l); ctx.strokeStyle=C; const r=settings.circularDirection==='inward' ? Math.max(0, hY - H) : 150; const rEnd=settings.circularDirection==='inward' ? hY : 150+H; const sX=hX+Math.cos(a)*r, sY=hY+Math.sin(a)*r, eX=hX+Math.cos(a)*rEnd, eY=hY+Math.sin(a)*rEnd; ctx.beginPath(); ctx.moveTo(sX,sY); ctx.lineTo(eX,eY); ctx.stroke(); }},
-        sunburst: (c, o=0) => { const l=Math.floor(frequencyData.length/2), hX=canvas.width/2+o, hY=canvas.height/2, C=c||getDrawColor(0.5); settings.filledShapes?ctx.fillStyle=C:ctx.strokeStyle=C; ctx.lineWidth=3; ctx.beginPath(); for(let i=1;i<l;i++){ const H=frequencyData[i]*(settings.sensitivity/1.5), a=(i/l)*2*Math.PI, x=hX+Math.cos(a)*H, y=hY+Math.sin(a)*H; i===1?ctx.moveTo(x,y):ctx.lineTo(x,y); } ctx.closePath(); settings.filledShapes?ctx.fill():ctx.stroke();},
-        spokes: (c, o=0) => { const l=Math.floor(frequencyData.length/4), hX=canvas.width/2+o, hY=canvas.height/2; ctx.lineWidth=2; for(let i=1;i<l;i+=2){ const H=frequencyData[i]*settings.sensitivity, a=(i/l)*2*Math.PI, C=c||getDrawColor(i/l); ctx.strokeStyle=C; const rEnd=50+H; const sX=hX+Math.cos(a)*50, sY=hY+Math.sin(a)*50, eX=hX+Math.cos(a)*rEnd, eY=hY+Math.sin(a)*rEnd; ctx.beginPath(); ctx.moveTo(sX,sY); ctx.lineTo(eX,eY); ctx.stroke(); }},
-        blob: (c, o=0) => { const l=Math.floor(frequencyData.length/2), hX=canvas.width/2+o, hY=canvas.height/2, C=c||getDrawColor(0.5); settings.filledShapes?ctx.fillStyle=C:ctx.strokeStyle=C; ctx.lineWidth=3; ctx.beginPath(); for(let i=1;i<l;i++){ const H=frequencyData[i]*(settings.sensitivity/1.5), r=150+H, a=(i/l)*2*Math.PI, x=hX+Math.cos(a)*r, y=hY+Math.sin(a)*r; i===1?ctx.moveTo(x,y):ctx.lineTo(x,y); } ctx.closePath(); settings.filledShapes?ctx.fill():ctx.stroke();},
         polygons: (c, o=0) => { const hX=canvas.width/2+o, hY=canvas.height/2; const bass=frequencyData[2]*(settings.sensitivity/2), mids=frequencyData[150]*(settings.sensitivity/2), highs=frequencyData[500]*(settings.sensitivity/2); const C=c||getDrawColor(0.5); settings.filledShapes?ctx.fillStyle=C:ctx.strokeStyle=C; ctx.lineWidth=2; drawPolygon(hX,hY,3,100+bass,dynamicRotation,C); drawPolygon(hX,hY,4,150+mids,-dynamicRotation,C); drawPolygon(hX,hY,5,200+highs,dynamicRotation/2,C); },
         nestedPolygons: (c, o=0) => { const hX=canvas.width/2+o, hY=canvas.height/2; const bass=frequencyData[4]*settings.sensitivity; for (let i=3; i>0; i--) { const C = c || getDrawColor(i/3); ctx.strokeStyle=C; ctx.lineWidth=2; drawPolygon(hX,hY,3,50*i + bass/i, dynamicRotation * (i%2===0?-1:1) * (1/i)); }},
         starfield: (c, o=0) => { const l=Math.floor(frequencyData.length/2); for(let i=1; i<l; i+=5) { const H=frequencyData[i]*(settings.sensitivity/2); if(H < 10) continue; const x = (i/l) * canvas.width + o; const y = (i%100/100) * canvas.height; const C=c||getDrawColor(i/l); ctx.strokeStyle=C; drawPolygon(x,y,4,H/10,dynamicRotation,C); }},
         shatter: (c, o=0) => { 
-            // Rewritten Shatter: Draws a base core that splinters out sharply
             const l=frequencyData.length, hX=canvas.width/2+o, hY=canvas.height/2; 
             const avg=getAverageVolume(frequencyData)*(settings.sensitivity/1.5); 
             const C=c||getDrawColor(0.5); 
@@ -196,7 +144,6 @@ window.addEventListener('DOMContentLoaded', () => {
             for(let i=1;i<l;i+=2){
                 const H=frequencyData[i]*(settings.sensitivity/1.5);
                 const a=(i/l)*2*Math.PI; 
-                // Core radius + jagged random spikes based on frequency
                 const r=100 + (H * (Math.random() * 1.5)); 
                 const x=hX+Math.cos(a)*r, y=hY+Math.sin(a)*r; 
                 i===1?ctx.moveTo(x,y):ctx.lineTo(x,y);
@@ -217,7 +164,7 @@ window.addEventListener('DOMContentLoaded', () => {
     function drawPolygon(x,y,s,r,rot,C){ctx.beginPath(); for(let i=0;i<s;i++){ctx.lineTo(x+r*Math.cos(rot+i*2*Math.PI/s),y+r*Math.sin(rot+i*2*Math.PI/s));} ctx.closePath(); settings.filledShapes?ctx.fill():ctx.stroke();}
     function drawProfileImage() { if (!profileImage || !profileImage.complete) return; const centerX = canvas.width / 2, centerY = canvas.height / 2; const size = 120; ctx.save(); ctx.beginPath(); ctx.arc(centerX, centerY, size / 2, 0, Math.PI * 2); ctx.clip(); ctx.drawImage(profileImage, centerX - size / 2, centerY - size / 2, size, size); ctx.restore(); }
     
-    // --- HELPER FUNCTIONS ---
+    // --- COLOR EXTRACTION & LOGIC ---
     function updateContrast() {
         const r = backgroundRgb.r, g = backgroundRgb.g, b = backgroundRgb.b;
         const yiq = ((r*299)+(g*587)+(b*114))/1000;
@@ -226,6 +173,34 @@ window.addEventListener('DOMContentLoaded', () => {
         uiBtns.forEach(btn => btn.style.color = yiq >= 128 ? '#000' : '#fff');
     }
 
+    // FIX: Using the secure Base64 method sent from main.js
+    function extractColorsFromImage(base64Data) {
+        const img = new Image();
+        img.onload = () => {
+            const hiddenCanvas = document.createElement('canvas');
+            const hiddenCtx = hiddenCanvas.getContext('2d');
+            hiddenCanvas.width = 10; hiddenCanvas.height = 10;
+            hiddenCtx.drawImage(img, 0, 0, 10, 10);
+            try {
+                const data = hiddenCtx.getImageData(0, 0, 10, 10).data;
+                const colors = [];
+                const indices =[0, 36, 360, 396, 220]; 
+                indices.forEach(idx => {
+                    const r = data[idx], g = data[idx+1], b = data[idx+2];
+                    colors.push("#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1));
+                });
+                settings.gradientColors = [...new Set(colors)].slice(0, 5);
+                if(settings.gradientColors.length < 2) settings.gradientColors.push('#ffffff');
+                updateGradientUI(); saveSettings();
+            } catch (e) {
+                console.error("Canvas read error:", e);
+                alert("Could not extract colors. The image data could not be parsed.");
+            }
+        }
+        img.src = base64Data;
+    }
+
+    // --- OTHER FUNCTIONS & EVENT LISTENERS ---
     function saveSettings() { localStorage.setItem('visualizerSettings', JSON.stringify(settings)); }
     function loadSettings() { const saved = localStorage.getItem('visualizerSettings'); if (saved) settings = { ...defaultSettings, ...JSON.parse(saved) }; visualizerSelect.value = settings.visualizerType; dynamicCheckbox.checked = settings.dynamicEffects; shakeSlider.value = settings.shake; aberrationSlider.value = settings.aberration; glowSlider.value = settings.glow; glowColor.value = settings.glowColor; scanlineSlider.value = settings.scanlines; accentColorCheckbox.checked = settings.useAccentColor; backgroundColorInput.value = settings.backgroundColor; sensitivitySlider.value = settings.sensitivity; smoothingSlider.value = (settings.smoothing || 0.8) * 100; trailSlider.value = settings.trailAmount * 100; audioSourceSelect.value = settings.audioType; fillCheckbox.checked = settings.filledShapes; directionSelect.value = settings.circularDirection; rotationSlider.value = settings.rotationSpeed; rainbowCheckbox.checked = settings.rainbowMode; rainbowSpeedSlider.value = settings.rainbowSpeed; gradientBgCheckbox.checked = settings.gradientBackground; backgroundRgb = hexToRgb(settings.backgroundColor); dynamicEffectsFieldset.classList.toggle('disabled', !settings.dynamicEffects); if(settings.profileImagePath) setProfileImage(settings.profileImagePath); handleVisualizerOptionsVisibility(); handleRainbowModeVisibility(); updateContrast(); }
     
@@ -246,14 +221,48 @@ window.addEventListener('DOMContentLoaded', () => {
     function getDrawColor(fraction) { if (settings.rainbowMode) { const hue = (fraction * 360) + rainbowHueOffset; return `hsl(${hue % 360}, 100%, 50%)`; } return getMultiStopGradientColor(fraction); }
     function handleVisualizerOptionsVisibility() { const type = visualizerSelect.value; const hasFillOption =['blob', 'sunburst', 'polygons', 'nestedPolygons', 'shatter', 'flower', 'kaleidoscope'].includes(type); const hasDirectionOption = ['circle'].includes(type); const hasRotationOption =['polygons', 'nestedPolygons', 'starfield', 'kaleidoscope'].includes(type); visualizerOptionsFieldset.classList.toggle('hidden', !hasFillOption && !hasDirectionOption && !hasRotationOption); fillCheckbox.parentElement.style.display = hasFillOption ? '' : 'none'; directionSelect.parentElement.style.display = hasDirectionOption ? '' : 'none'; rotationSlider.parentElement.style.display = hasRotationOption ? '' : 'none'; }
     function handleRainbowModeVisibility() { rainbowControls.classList.toggle('hidden', !settings.rainbowMode); gradientControls.classList.toggle('disabled', settings.rainbowMode || settings.useAccentColor); accentColorCheckbox.disabled = settings.rainbowMode; }
-    function setProfileImage(path) { if (path) { profileImage = new Image(); profileImage.src = path; settings.profileImagePath = path; pfpPreview.src = path; pfpPreview.classList.remove('hidden'); } else { profileImage = null; settings.profileImagePath = null; pfpPreview.src = '#'; pfpPreview.classList.add('hidden'); } saveSettings(); }
+    
+    // FIX: Using base64 to set the profile image securely
+    function setProfileImage(base64Data) { 
+        if (base64Data) { 
+            profileImage = new Image(); 
+            profileImage.src = base64Data; 
+            settings.profileImagePath = base64Data; 
+            pfpPreview.src = base64Data; 
+            pfpPreview.classList.remove('hidden'); 
+        } else { 
+            profileImage = null; 
+            settings.profileImagePath = null; 
+            pfpPreview.src = '#'; 
+            pfpPreview.classList.add('hidden'); 
+        } 
+        saveSettings(); 
+    }
 
     // --- EVENT LISTENERS ---
     settingsButton.addEventListener('click', () => settingsPanel.classList.toggle('open'));
     closeSettingsButton.addEventListener('click', () => settingsPanel.classList.remove('open'));
-    selectPfpButton.addEventListener('click', async () => { const paths = await window.electronAPI.showOpenDialog({ properties: ['openFile'], filters: [{ name: 'Images', extensions:['png', 'jpg', 'jpeg'] }] }); if (paths && paths[0]) setProfileImage(`file://${paths[0]}`); });
+    
+    // FIX: Using the new base64 handler for the profile picture
+    selectPfpButton.addEventListener('click', async () => { 
+        const paths = await window.electronAPI.showOpenDialog({ properties: ['openFile'], filters:[{ name: 'Images', extensions:['png', 'jpg', 'jpeg'] }] }); 
+        if (paths && paths[0]) {
+            const b64 = await window.electronAPI.readFileBase64(paths[0]);
+            if (b64) setProfileImage(b64);
+        }
+    });
+    
     clearPfpButton.addEventListener('click', () => setProfileImage(null));
-    extractColorsButton.addEventListener('click', async () => { const paths = await window.electronAPI.showOpenDialog({ properties:['openFile'], filters: [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg'] }] }); if (paths && paths[0]) extractColorsFromImage(`file://${paths[0]}`); });
+    
+    // FIX: Using the new base64 handler for color extraction
+    extractColorsButton.addEventListener('click', async () => { 
+        const paths = await window.electronAPI.showOpenDialog({ properties:['openFile'], filters: [{ name: 'Images', extensions:['png', 'jpg', 'jpeg'] }] }); 
+        if (paths && paths[0]) {
+            const b64 = await window.electronAPI.readFileBase64(paths[0]);
+            if (b64) extractColorsFromImage(b64);
+        }
+    });
+    
     audioSourceSelect.addEventListener('change', () => { settings.audioType = audioSourceSelect.value; updateAudioSourceUI(); saveSettings(); startOrUpdateAudioSource(); });
     microphoneSelect.addEventListener('change', () => { settings.microphoneId = microphoneSelect.value; saveSettings(); startOrUpdateAudioSource(); });
     visualizerSelect.addEventListener('change', (e) => { settings.visualizerType = e.target.value; handleVisualizerOptionsVisibility(); saveSettings(); });
@@ -276,8 +285,5 @@ window.addEventListener('DOMContentLoaded', () => {
     rainbowCheckbox.addEventListener('change', (e) => { settings.rainbowMode = e.target.checked; handleRainbowModeVisibility(); saveSettings(); });
     rainbowSpeedSlider.addEventListener('input', (e) => { settings.rainbowSpeed = parseInt(e.target.value); saveSettings(); });
     
-    // --- STARTUP LOGIC ---
-    // The visualizer actually stays frozen behind the epilepsy warning
-    // until the user explicitly clicks the accept button.
-    draw(); 
+    draw();
 });
