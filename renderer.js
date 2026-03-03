@@ -1,52 +1,15 @@
 window.addEventListener('DOMContentLoaded', () => {
     // --- DOM ELEMENT REFERENCES ---
-    const canvas = document.getElementById('visualizerCanvas');
-    const ctx = canvas.getContext('2d');
-    const epilepsyWarning = document.getElementById('epilepsyWarning');
-    const acceptWarningButton = document.getElementById('acceptWarningButton');
-    const uiContainer = document.getElementById('uiContainer');
-    const settingsButton = document.getElementById('settingsButton');
-    const settingsPanel = document.getElementById('settingsPanel');
-    const closeSettingsButton = document.getElementById('closeButton');
-    const visualizerOptionsFieldset = document.getElementById('visualizerOptionsFieldset');
-    const fillCheckbox = document.getElementById('fillCheckbox');
-    const directionSelect = document.getElementById('directionSelect');
-    const rotationSlider = document.getElementById('rotationSlider');
-    const selectPfpButton = document.getElementById('selectPfpButton');
-    const clearPfpButton = document.getElementById('clearPfpButton');
-    const pfpPreview = document.getElementById('pfpPreview');
-    const dynamicEffectsFieldset = document.getElementById('dynamicEffectsFieldset');
-    const dynamicCheckbox = document.getElementById('dynamicCheckbox');
-    const shakeSlider = document.getElementById('shakeSlider');
-    const aberrationSlider = document.getElementById('aberrationSlider');
-    const glowSlider = document.getElementById('glowSlider');
-    const glowColor = document.getElementById('glowColor');
-    const scanlineSlider = document.getElementById('scanlineSlider');
-    const rainbowCheckbox = document.getElementById('rainbowCheckbox');
-    const rainbowControls = document.getElementById('rainbowControls');
-    const rainbowSpeedSlider = document.getElementById('rainbowSpeedSlider');
-    const accentColorCheckbox = document.getElementById('accentColorCheckbox');
-    const gradientControls = document.getElementById('gradientControls');
-    const gradientPickerContainer = document.getElementById('gradientPickerContainer');
-    const addColorButton = document.getElementById('addColorButton');
-    const extractColorsButton = document.getElementById('extractColorsButton');
-    const backgroundColorInput = document.getElementById('backgroundColor');
-    const gradientBgCheckbox = document.getElementById('gradientBgCheckbox');
-    const sensitivitySlider = document.getElementById('sensitivitySlider');
-    const smoothingSlider = document.getElementById('smoothingSlider');
-    const trailSlider = document.getElementById('trailSlider');
-    const audioSourceSelect = document.getElementById('audioSourceSelect');
-    const microphoneSelectRow = document.getElementById('microphoneSelectRow');
-    const microphoneSelect = document.getElementById('microphoneSelect');
-    const silentMessage = document.getElementById('silentMessage');
+    const canvas = document.getElementById('visualizerCanvas'), ctx = canvas.getContext('2d'), epilepsyWarning = document.getElementById('epilepsyWarning'), acceptWarningButton = document.getElementById('acceptWarningButton'), uiContainer = document.getElementById('uiContainer'), settingsButton = document.getElementById('settingsButton'), settingsPanel = document.getElementById('settingsPanel'), closeSettingsButton = document.getElementById('closeButton'), visualizerOptionsFieldset = document.getElementById('visualizerOptionsFieldset'), fillCheckbox = document.getElementById('fillCheckbox'), directionSelect = document.getElementById('directionSelect'), rotationSlider = document.getElementById('rotationSlider'), selectPfpButton = document.getElementById('selectPfpButton'), clearPfpButton = document.getElementById('clearPfpButton'), pfpPreview = document.getElementById('pfpPreview'), dynamicEffectsFieldset = document.getElementById('dynamicEffectsFieldset'), visualizerSelect = document.getElementById('visualizerSelect'), dynamicCheckbox = document.getElementById('dynamicCheckbox'), shakeSlider = document.getElementById('shakeSlider'), aberrationSlider = document.getElementById('aberrationSlider'), glowSlider = document.getElementById('glowSlider'), glowColor = document.getElementById('glowColor'), scanlineSlider = document.getElementById('scanlineSlider'), particleCheckbox = document.getElementById('particleCheckbox'), particleAmountSlider = document.getElementById('particleAmountSlider'), particleGravitySlider = document.getElementById('particleGravitySlider'), particleLifespanSlider = document.getElementById('particleLifespanSlider'), accentColorCheckbox = document.getElementById('accentColorCheckbox'), gradientControls = document.getElementById('gradientControls'), gradientPickerContainer = document.getElementById('gradientPickerContainer'), addColorButton = document.getElementById('addColorButton'), extractColorsButton = document.getElementById('extractColorsButton'), backgroundColorInput = document.getElementById('backgroundColor'), gradientBgCheckbox = document.getElementById('gradientBgCheckbox'), sensitivitySlider = document.getElementById('sensitivitySlider'), smoothingSlider = document.getElementById('smoothingSlider'), trailSlider = document.getElementById('trailSlider'), metadataDisplay = document.getElementById('metadataDisplay'), metaTitle = document.getElementById('metaTitle'), metaArtist = document.getElementById('metaArtist'), silentMessage = document.getElementById('silentMessage'), audioSourceSelect = document.getElementById('audioSourceSelect'), microphoneSelectRow = document.getElementById('microphoneSelectRow'), microphoneSelect = document.getElementById('microphoneSelect'), rainbowCheckbox = document.getElementById('rainbowCheckbox'), rainbowControls = document.getElementById('rainbowControls'), rainbowSpeedSlider = document.getElementById('rainbowSpeedSlider');
     const visBtns = document.querySelectorAll('.vis-btn');
 
     // --- GLOBAL STATE ---
     let audioContext, analyser, frequencyData, timeDomainData;
-    let silenceCounter = 0, silentMessageInterval = null;
-    let dynamicRotation = 0, rainbowHueOffset = 0;
+    let silenceCounter = 0, silentMessageInterval = null, dynamicRotation = 0, rainbowHueOffset = 0;
     let profileImage = null; 
-    let matrixDrops =[];
+    let matrixDrops = []; 
+    let particles = [];
+    const MAX_PARTICLES = 3000;
 
     const defaultSettings = { 
         visualizerType: 'centerBars', dynamicEffects: false, shake: 15, aberration: 5, glow: 15, glowColor: '#ffffff', scanlines: 20, 
@@ -80,6 +43,8 @@ window.addEventListener('DOMContentLoaded', () => {
         updateGradientUI();
         handleVisualizerOptionsVisibility();
         handleRainbowModeVisibility();
+        
+        draw(); 
     }, { once: true });
 
 
@@ -95,8 +60,7 @@ window.addEventListener('DOMContentLoaded', () => {
         const avgVolume = getAverageVolume(frequencyData);
         const intensity = Math.min(1, avgVolume / 140);
         
-        const fastFade = 0.95; 
-        const transitionSpeed = 4;
+        const fastFade = 0.95, transitionSpeed = 4;
         const effectiveTrailAmount = fastFade - (fastFade - settings.trailAmount) * Math.min(1, intensity * transitionSpeed);
         
         // Background Drawing
@@ -121,6 +85,7 @@ window.addEventListener('DOMContentLoaded', () => {
         dynamicRotation += intensity * (settings.rotationSpeed / 100);
         if (settings.rainbowMode) rainbowHueOffset += settings.rainbowSpeed / 10;
         
+        updateAndDrawParticles();
         ctx.save();
         
         if (settings.dynamicEffects) { 
@@ -136,9 +101,9 @@ window.addEventListener('DOMContentLoaded', () => {
         if (settings.dynamicEffects && settings.aberration > 0) { 
             const aberrationAmount = intensity * settings.aberration; 
             ctx.globalCompositeOperation = 'lighter'; 
-            drawFuncs[settings.visualizerType](`rgba(255,0,0,0.7)`, -aberrationAmount); 
-            drawFuncs[settings.visualizerType](`rgba(0,255,0,0.7)`, 0); 
-            drawFuncs[settings.visualizerType](`rgba(0,0,255,0.7)`, aberrationAmount); 
+            if(drawFuncs[settings.visualizerType]) drawFuncs[settings.visualizerType](`rgba(255,0,0,0.7)`, -aberrationAmount); 
+            if(drawFuncs[settings.visualizerType]) drawFuncs[settings.visualizerType](`rgba(0,255,0,0.7)`, 0); 
+            if(drawFuncs[settings.visualizerType]) drawFuncs[settings.visualizerType](`rgba(0,0,255,0.7)`, aberrationAmount); 
             ctx.globalCompositeOperation = 'source-over'; 
         } else { 
             if (drawFuncs[settings.visualizerType]) {
@@ -162,133 +127,19 @@ window.addEventListener('DOMContentLoaded', () => {
         handleSilence(avgVolume);
     }
     
-    // --- DRAWING FUNCTIONS ---
+    // --- DRAWING FUNCTIONS (ALL 34) ---
     const drawFuncs = {
-        centerBars: (c, o=0) => { const l=frequencyData.length, w=(canvas.width/2)/(l/2), h=canvas.width/2; for(let i=0;i<l/2;i++){ const H=frequencyData[i]*settings.sensitivity, C=c||getDrawColor(i/(l/2)); ctx.fillStyle=C; const x1=h+(i*w)+o, x2=h-(i*w)-w+o; ctx.fillRect(x1,canvas.height/2-H/2,w,H); ctx.fillRect(x2,canvas.height/2-H/2,w,H); } },
-        upwardBars: (c, o=0) => { const l=frequencyData.length, w=canvas.width/l; for(let i=0;i<l;i++){ const H=frequencyData[i]*settings.sensitivity, C=c||getDrawColor(i/l); ctx.fillStyle=C; const x=i*w+o; ctx.fillRect(x,canvas.height,w,-H); }},
-        dualSidedBars: (c, o=0) => { const l=frequencyData.length, w=canvas.width/l; for(let i=0;i<l;i++){ const H=frequencyData[i]*settings.sensitivity, C=c||getDrawColor(i/l); ctx.fillStyle=C; const x=i*w+o; ctx.fillRect(x,0,w,H/2); ctx.fillRect(x,canvas.height,w,-H/2); }},
-        floorAndCeiling: (c, o=0) => { const l=Math.floor(frequencyData.length/2), w=canvas.width/l; for(let i=0;i<l;i++){ const H=frequencyData[i]*settings.sensitivity, C=c||getDrawColor(i/l); ctx.fillStyle=C; const x=i*w+o; ctx.fillRect(x,0,w,H); ctx.fillRect(canvas.width-x-w,canvas.height,w,-H); }},
-        
-        // REBUILT: 3D Bars with true depth and shading
-        bars3D: (c, o=0) => { 
-            const l=Math.floor(frequencyData.length/2); 
-            const w=canvas.width/l; 
-            for(let i=0;i<l;i++){ 
-                const H=frequencyData[i]*settings.sensitivity * 1.5; 
-                if (H < 1) continue;
-                const C=c||getDrawColor(i/l); 
-                const x=i*w+o, y=canvas.height-H, depth = w * 0.8; 
-                ctx.fillStyle=C; ctx.fillRect(x,y,w-2,H); // Front face
-                ctx.fillStyle = C; ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x+depth, y-depth); ctx.lineTo(x+w-2+depth, y-depth); ctx.lineTo(x+w-2, y); ctx.fill();
-                ctx.fillStyle = 'rgba(255,255,255,0.3)'; ctx.fill(); // Highlight top
-                ctx.fillStyle = C; ctx.beginPath(); ctx.moveTo(x+w-2, y); ctx.lineTo(x+w-2+depth, y-depth); ctx.lineTo(x+w-2+depth, canvas.height-depth); ctx.lineTo(x+w-2, canvas.height); ctx.fill();
-                ctx.fillStyle = 'rgba(0,0,0,0.4)'; ctx.fill(); // Shadow side
-            } 
-        },
-        
-        circle: (c, o=0) => { const l=frequencyData.length, hX=canvas.width/2+o, hY=canvas.height/2; ctx.lineWidth=4; for(let i=1;i<l;i++){ const H=frequencyData[i]*(settings.sensitivity/2), a=(i/l)*2*Math.PI, C=c||getDrawColor(i/l); ctx.strokeStyle=C; const r=settings.circularDirection==='inward' ? Math.max(0, hY - H) : 150; const rEnd=settings.circularDirection==='inward' ? hY : 150+H; const sX=hX+Math.cos(a)*r, sY=hY+Math.sin(a)*r, eX=hX+Math.cos(a)*rEnd, eY=hY+Math.sin(a)*rEnd; ctx.beginPath(); ctx.moveTo(sX,sY); ctx.lineTo(eX,eY); ctx.stroke(); }},
-        sunburst: (c, o=0) => { const l=Math.floor(frequencyData.length/2), hX=canvas.width/2+o, hY=canvas.height/2, C=c||getDrawColor(0.5); settings.filledShapes?ctx.fillStyle=C:ctx.strokeStyle=C; ctx.lineWidth=3; ctx.beginPath(); for(let i=1;i<l;i++){ const H=frequencyData[i]*(settings.sensitivity/1.5), a=(i/l)*2*Math.PI, x=hX+Math.cos(a)*H, y=hY+Math.sin(a)*H; i===1?ctx.moveTo(x,y):ctx.lineTo(x,y); } ctx.closePath(); settings.filledShapes?ctx.fill():ctx.stroke();},
-        spokes: (c, o=0) => { const l=Math.floor(frequencyData.length/4), hX=canvas.width/2+o, hY=canvas.height/2; ctx.lineWidth=2; for(let i=1;i<l;i+=2){ const H=frequencyData[i]*settings.sensitivity, a=(i/l)*2*Math.PI, C=c||getDrawColor(i/l); ctx.strokeStyle=C; const rEnd=50+H; const sX=hX+Math.cos(a)*50, sY=hY+Math.sin(a)*50, eX=hX+Math.cos(a)*rEnd, eY=hY+Math.sin(a)*rEnd; ctx.beginPath(); ctx.moveTo(sX,sY); ctx.lineTo(eX,eY); ctx.stroke(); }},
-        blob: (c, o=0) => { const l=Math.floor(frequencyData.length/2), hX=canvas.width/2+o, hY=canvas.height/2, C=c||getDrawColor(0.5); settings.filledShapes?ctx.fillStyle=C:ctx.strokeStyle=C; ctx.lineWidth=3; ctx.beginPath(); for(let i=1;i<l;i++){ const H=frequencyData[i]*(settings.sensitivity/1.5), r=150+H, a=(i/l)*2*Math.PI, x=hX+Math.cos(a)*r, y=hY+Math.sin(a)*r; i===1?ctx.moveTo(x,y):ctx.lineTo(x,y); } ctx.closePath(); settings.filledShapes?ctx.fill():ctx.stroke();},
+        centerBars: (c, o=0) => { const l=frequencyData.length, w=(canvas.width/2)/(l/2), h=canvas.width/2; for(let i=0;i<l/2;i++){ const H=frequencyData[i]*settings.sensitivity, C=c||getDrawColor(i/(l/2)); ctx.fillStyle=C; const x1=h+(i*w)+o, x2=h-(i*w)-w+o; ctx.fillRect(x1,canvas.height/2-H/2,w,H); ctx.fillRect(x2,canvas.height/2-H/2,w,H); if(H>50){spawnParticles(x1,canvas.height/2-H/2,H/255,C); spawnParticles(x2,canvas.height/2+H/2,H/255,C);}} },
+        upwardBars: (c, o=0) => { const l=frequencyData.length, w=canvas.width/l; for(let i=0;i<l;i++){ const H=frequencyData[i]*settings.sensitivity, C=c||getDrawColor(i/l); ctx.fillStyle=C; const x=i*w+o; ctx.fillRect(x,canvas.height,w,-H); if(H>100)spawnParticles(x,canvas.height-H,H/255,C);}},
+        dualSidedBars: (c, o=0) => { const l=frequencyData.length, w=canvas.width/l; for(let i=0;i<l;i++){ const H=frequencyData[i]*settings.sensitivity, C=c||getDrawColor(i/l); ctx.fillStyle=C; const x=i*w+o; ctx.fillRect(x,0,w,H/2); ctx.fillRect(x,canvas.height,w,-H/2); if(H>100){spawnParticles(x,H/2,H/255,C); spawnParticles(x,canvas.height-H/2,H/255,C);}}},
+        floorAndCeiling: (c, o=0) => { const l=Math.floor(frequencyData.length/2), w=canvas.width/l; for(let i=0;i<l;i++){ const H=frequencyData[i]*settings.sensitivity, C=c||getDrawColor(i/l); ctx.fillStyle=C; const x=i*w+o; ctx.fillRect(x,0,w,H); ctx.fillRect(canvas.width-x-w,canvas.height,w,-H); if(H>50){spawnParticles(x,H,H/255,C); spawnParticles(canvas.width-x-w,canvas.height-H,H/255,C);}}},
+        bars3D: (c, o=0) => { const l=Math.floor(frequencyData.length/2); const w=canvas.width/l; for(let i=0;i<l;i++){ const H=frequencyData[i]*settings.sensitivity * 1.5; if (H < 1) continue; const C=c||getDrawColor(i/l); const x=i*w+o, y=canvas.height-H, depth = w * 0.8; ctx.fillStyle=C; ctx.fillRect(x,y,w-2,H); ctx.fillStyle = C; ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x+depth, y-depth); ctx.lineTo(x+w-2+depth, y-depth); ctx.lineTo(x+w-2, y); ctx.fill(); ctx.fillStyle = 'rgba(255,255,255,0.3)'; ctx.fill(); ctx.fillStyle = C; ctx.beginPath(); ctx.moveTo(x+w-2, y); ctx.lineTo(x+w-2+depth, y-depth); ctx.lineTo(x+w-2+depth, canvas.height-depth); ctx.lineTo(x+w-2, canvas.height); ctx.fill(); ctx.fillStyle = 'rgba(0,0,0,0.4)'; ctx.fill(); } },
+        circle: (c, o=0) => { const l=frequencyData.length, hX=canvas.width/2+o, hY=canvas.height/2; ctx.lineWidth=4; for(let i=1;i<l;i++){ const H=frequencyData[i]*(settings.sensitivity/2), a=(i/l)*2*Math.PI, C=c||getDrawColor(i/l); ctx.strokeStyle=C; const r=settings.circularDirection==='inward' ? Math.max(0, hY - H) : 150; const rEnd=settings.circularDirection==='inward' ? hY : 150+H; const sX=hX+Math.cos(a)*r, sY=hY+Math.sin(a)*r, eX=hX+Math.cos(a)*rEnd, eY=hY+Math.sin(a)*rEnd; ctx.beginPath(); ctx.moveTo(sX,sY); ctx.lineTo(eX,eY); ctx.stroke(); if(H>50)spawnParticles(eX,eY,H/255,C);}},
+        sunburst: (c, o=0) => { const l=Math.floor(frequencyData.length/2), hX=canvas.width/2+o, hY=canvas.height/2, C=c||getDrawColor(0.5); settings.filledShapes?ctx.fillStyle=C:ctx.strokeStyle=C; ctx.lineWidth=3; ctx.beginPath(); for(let i=1;i<l;i++){ const H=frequencyData[i]*(settings.sensitivity/1.5), a=(i/l)*2*Math.PI, x=hX+Math.cos(a)*H, y=hY+Math.sin(a)*H; i===1?ctx.moveTo(x,y):ctx.lineTo(x,y); if(H>50)spawnParticles(x,y,H/255,C);} ctx.closePath(); settings.filledShapes?ctx.fill():ctx.stroke();},
+        spokes: (c, o=0) => { const l=Math.floor(frequencyData.length/4), hX=canvas.width/2+o, hY=canvas.height/2; ctx.lineWidth=2; for(let i=1;i<l;i+=2){ const H=frequencyData[i]*settings.sensitivity, a=(i/l)*2*Math.PI, C=c||getDrawColor(i/l); ctx.strokeStyle=C; const rEnd=50+H; const sX=hX+Math.cos(a)*50, sY=hY+Math.sin(a)*50, eX=hX+Math.cos(a)*rEnd, eY=hY+Math.sin(a)*rEnd; ctx.beginPath(); ctx.moveTo(sX,sY); ctx.lineTo(eX,eY); ctx.stroke(); if(H>50)spawnParticles(eX,eY,H/255,C);}},
+        blob: (c, o=0) => { const l=Math.floor(frequencyData.length/2), hX=canvas.width/2+o, hY=canvas.height/2, C=c||getDrawColor(0.5); settings.filledShapes?ctx.fillStyle=C:ctx.strokeStyle=C; ctx.lineWidth=3; ctx.beginPath(); for(let i=1;i<l;i++){ const H=frequencyData[i]*(settings.sensitivity/1.5), r=150+H, a=(i/l)*2*Math.PI, x=hX+Math.cos(a)*r, y=hY+Math.sin(a)*r; i===1?ctx.moveTo(x,y):ctx.lineTo(x,y); if(H>50)spawnParticles(x,y,H/255,C);} ctx.closePath(); settings.filledShapes?ctx.fill():ctx.stroke();},
         polygons: (c, o=0) => { const hX=canvas.width/2+o, hY=canvas.height/2; const bass=frequencyData[2]*(settings.sensitivity/2), mids=frequencyData[150]*(settings.sensitivity/2), highs=frequencyData[500]*(settings.sensitivity/2); const C=c||getDrawColor(0.5); settings.filledShapes?ctx.fillStyle=C:ctx.strokeStyle=C; ctx.lineWidth=2; drawPolygon(hX,hY,3,100+bass,dynamicRotation,C); drawPolygon(hX,hY,4,150+mids,-dynamicRotation,C); drawPolygon(hX,hY,5,200+highs,dynamicRotation/2,C); },
         nestedPolygons: (c, o=0) => { const hX=canvas.width/2+o, hY=canvas.height/2; const bass=frequencyData[4]*settings.sensitivity; for (let i=3; i>0; i--) { const C = c || getDrawColor(i/3); ctx.strokeStyle=C; ctx.lineWidth=2; drawPolygon(hX,hY,3,50*i + bass/i, dynamicRotation * (i%2===0?-1:1) * (1/i)); }},
-        kaleidoscope: (c, o=0) => { const l = Math.floor(frequencyData.length / 4); const cx = canvas.width / 2 + o, cy = canvas.height / 2; const slices = 12; const angleStep = (Math.PI * 2) / slices; for (let s = 0; s < slices; s++) { ctx.save(); ctx.translate(cx, cy); ctx.rotate(s * angleStep + dynamicRotation); if (s % 2 !== 0) ctx.scale(1, -1); ctx.beginPath(); ctx.moveTo(0, 0); for (let i = 0; i < l; i++) { const H = frequencyData[i] * (settings.sensitivity / 1.5); const r = (i / l) * (Math.min(canvas.width, canvas.height) / 2) + H; const theta = (i / l) * (angleStep); const x = Math.cos(theta) * r; const y = Math.sin(theta) * r; ctx.lineTo(x, y); } ctx.closePath(); const C = c || getDrawColor(s / slices); settings.filledShapes ? ctx.fillStyle = C : ctx.strokeStyle = C; ctx.lineWidth = 2; settings.filledShapes ? ctx.fill() : ctx.stroke(); ctx.restore(); } },
-        
-        // REBUILT: Tunnel utilizing globalAlpha correctly so it doesn't turn black
-        tunnel: (c, o=0) => {
-            const hX = canvas.width / 2 + o, hY = canvas.height / 2;
-            const bass = frequencyData[2] * (settings.sensitivity / 2);
-            ctx.lineWidth = 2 + bass/20;
-            const numRings = 15;
-            for(let i=1; i<=numRings; i++) {
-                const phase = ((i + dynamicRotation/2) % numRings) / numRings; 
-                const r = phase * Math.max(canvas.width, canvas.height);
-                const C = c || getDrawColor(phase);
-                
-                ctx.globalAlpha = Math.max(0, 1 - phase);
-                settings.filledShapes ? ctx.fillStyle = C : ctx.strokeStyle = C;
-                
-                const currentRot = dynamicRotation*(i%2==0?1:-1);
-                if(settings.circularDirection === 'inward') {
-                    drawPolygon(hX, hY, 6, Math.max(0.1, Math.max(canvas.width, canvas.height) - r), currentRot, C);
-                } else {
-                    drawPolygon(hX, hY, 6, Math.max(0.1, r), currentRot, C);
-                }
-            }
-            ctx.globalAlpha = 1.0;
-        },
-
-        // NEW: Hyperspace (3D Stars flying towards you)
-        hyperspace: (c, o=0) => {
-            if(!window.stars) window.stars = Array.from({length: 400}, () => ({x: (Math.random()-0.5)*2000, y: (Math.random()-0.5)*2000, z: Math.random()*2000}));
-            const cx = canvas.width/2 + o, cy = canvas.height/2;
-            const avg = getAverageVolume(frequencyData);
-            const speed = 2 + (avg/255)*30 * settings.sensitivity; 
-            ctx.globalCompositeOperation = 'screen';
-            window.stars.forEach((star, i) => {
-                star.z -= speed;
-                if(star.z <= 0) { star.z = 2000; star.x = (Math.random()-0.5)*2000; star.y = (Math.random()-0.5)*2000; }
-                const px = cx + (star.x / star.z) * 500, py = cy + (star.y / star.z) * 500;
-                if (px >= 0 && px <= canvas.width && py >= 0 && py <= canvas.height) {
-                    const size = Math.max(0.1, (2000 - star.z) / 400);
-                    const C = c || getDrawColor(i / 400);
-                    ctx.fillStyle = C; ctx.beginPath(); ctx.arc(px, py, size, 0, Math.PI*2); ctx.fill();
-                    if(avg > 100 && i % 10 === 0) { ctx.strokeStyle = C; ctx.globalAlpha = (avg-100)/155 * 0.5; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(px, py); ctx.stroke(); ctx.globalAlpha = 1.0; }
-                }
-            });
-            ctx.globalCompositeOperation = 'source-over';
-        },
-
-        // NEW: Wireframe Sphere
-        wireframeSphere: (c, o=0) => {
-            const cx = canvas.width/2 + o, cy = canvas.height/2;
-            const rBase = Math.min(canvas.width, canvas.height) / 4;
-            const bands = 12, segments = 24, l = frequencyData.length;
-            ctx.lineWidth = 1.5;
-            for(let i=0; i<=bands; i++) {
-                const theta = (i / bands) * Math.PI; 
-                ctx.beginPath();
-                for(let j=0; j<=segments; j++) {
-                    const phi = (j / segments) * Math.PI * 2 + dynamicRotation; 
-                    const freqIdx = Math.floor(((i*segments + j) / (bands*segments)) * (l/2)); 
-                    const H = frequencyData[freqIdx] * (settings.sensitivity/2);
-                    const r = rBase + H;
-                    const x3d = r * Math.sin(theta) * Math.cos(phi), y3d = r * Math.cos(theta), z3d = r * Math.sin(theta) * Math.sin(phi);
-                    const fov = 500, z = z3d + fov, x = cx + (x3d * fov) / z, y = cy + (y3d * fov) / z;
-                    if (j===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
-                }
-                ctx.closePath();
-                const C = c || getDrawColor(i/bands);
-                settings.filledShapes ? ctx.fillStyle = C : ctx.strokeStyle = C;
-                settings.filledShapes ? (ctx.globalAlpha=0.1, ctx.fill(), ctx.globalAlpha=1.0) : null;
-                ctx.stroke();
-            }
-        },
-
-        rings: (c, o=0) => {
-            const hX = canvas.width / 2 + o, hY = canvas.height / 2;
-            const buckets = 5;
-            const l = Math.floor(frequencyData.length / 2);
-            for(let b=1; b<=buckets; b++) {
-                ctx.beginPath();
-                const C = c || getDrawColor(b/buckets);
-                settings.filledShapes ? ctx.fillStyle = C : ctx.strokeStyle = C;
-                ctx.lineWidth = 3;
-                const baseRadius = b * 80;
-                for(let i=0; i<l; i++) {
-                    const H = frequencyData[Math.floor(i * (frequencyData.length / l))] * (settings.sensitivity/2);
-                    const deformation = (i % b === 0) ? H : H/2;
-                    const r = baseRadius + deformation;
-                    const a = (i/l)*2*Math.PI + (dynamicRotation * (b%2==0?1:-1));
-                    const x = hX + Math.cos(a)*r, y = hY + Math.sin(a)*r;
-                    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
-                }
-                ctx.closePath();
-                settings.filledShapes ? ctx.globalAlpha = 0.2 : ctx.globalAlpha = 1;
-                settings.filledShapes ? ctx.fill() : ctx.stroke();
-                ctx.globalAlpha = 1.0;
-            }
-        },
         starfield: (c, o=0) => { const l=Math.floor(frequencyData.length/2); for(let i=1; i<l; i+=5) { const H=frequencyData[i]*(settings.sensitivity/2); if(H < 10) continue; const x = (i/l) * canvas.width + o; const y = (i%100/100) * canvas.height; const C=c||getDrawColor(i/l); ctx.strokeStyle=C; drawPolygon(x,y,4,H/10,dynamicRotation,C); }},
         shatter: (c, o=0) => { 
             const l=frequencyData.length, hX=canvas.width/2+o, hY=canvas.height/2; 
@@ -306,55 +157,29 @@ window.addEventListener('DOMContentLoaded', () => {
             ctx.closePath(); settings.filledShapes?ctx.fill():ctx.stroke(); 
         },
         flower: (c,o=0) => { const l=Math.floor(frequencyData.length/2), hX=canvas.width/2+o, hY=canvas.height/2; const C=c||getDrawColor(0.5); settings.filledShapes?ctx.fillStyle=C:ctx.strokeStyle=C; ctx.lineWidth=3; ctx.beginPath(); const petals=6; for(let i=1;i<l;i++){ const H=frequencyData[i]*(settings.sensitivity/2); const r=150+H + Math.sin(i/l*2*Math.PI*petals)*50; const a=(i/l)*2*Math.PI; const x=hX+Math.cos(a)*r; const y=hY+Math.sin(a)*r; i===1?ctx.moveTo(x,y):ctx.lineTo(x,y); } ctx.closePath(); settings.filledShapes?ctx.fill():ctx.stroke();},
-        
-        // REBUILT: Floating Dust speed logic
-        floatingDust: (c, o=0) => {
-            if(!window.dustArray) window.dustArray = Array.from({length: 150}, () => ({x: Math.random(), y: Math.random(), s: Math.random(), v: Math.random()*0.001 + 0.0005}));
-            const l = frequencyData.length;
-            const avg = getAverageVolume(frequencyData);
-            const intensity = Math.min(1, avg / 140);
-            window.dustArray.forEach((dust, i) => {
-                const freqIdx = Math.floor((i / 150) * l);
-                const H = frequencyData[freqIdx] * settings.sensitivity;
-                // Base speed + audio speed
-                dust.y -= (dust.v + (H / 20000) * (intensity + 0.1));
-                if(dust.y < 0) { dust.y = 1; dust.x = Math.random(); }
-                const px = dust.x * canvas.width + o, py = dust.y * canvas.height;
-                const radius = (dust.s * 5) + (H / 20);
-                ctx.beginPath(); ctx.arc(px, py, Math.max(0.1, radius), 0, Math.PI*2);
-                const C = c || getDrawColor(dust.y);
-                ctx.fillStyle = C; ctx.globalAlpha = Math.min(1, H/100 + 0.2); ctx.fill();
-            });
-            ctx.globalAlpha = 1.0;
-        },
-
+        kaleidoscope: (c, o=0) => { const l = Math.floor(frequencyData.length / 4); const cx = canvas.width / 2 + o, cy = canvas.height / 2; const slices = 12; const angleStep = (Math.PI * 2) / slices; for (let s = 0; s < slices; s++) { ctx.save(); ctx.translate(cx, cy); ctx.rotate(s * angleStep + dynamicRotation); if (s % 2 !== 0) ctx.scale(1, -1); ctx.beginPath(); ctx.moveTo(0, 0); for (let i = 0; i < l; i++) { const H = frequencyData[i] * (settings.sensitivity / 1.5); const r = (i / l) * (Math.min(canvas.width, canvas.height) / 2) + H; const theta = (i / l) * (angleStep); const x = Math.cos(theta) * r; const y = Math.sin(theta) * r; ctx.lineTo(x, y); } ctx.closePath(); const C = c || getDrawColor(s / slices); settings.filledShapes ? ctx.fillStyle = C : ctx.strokeStyle = C; ctx.lineWidth = 2; settings.filledShapes ? ctx.fill() : ctx.stroke(); ctx.restore(); } },
         matrix: (c, o=0) => { if(matrixDrops.length < canvas.width/20) { for(let i=0; i<canvas.width/20; i++) matrixDrops[i] = Math.random()*canvas.height; } ctx.fillStyle = c || getDrawColor(0.5); ctx.font = "15px monospace"; const l=frequencyData.length; for(let i=0; i<matrixDrops.length; i++) { const H = frequencyData[i % l] * settings.sensitivity; const char = String.fromCharCode(0x30A0 + Math.random()*96); ctx.fillText(char, i*20 + o, matrixDrops[i]); if(matrixDrops[i]*H > 10000 && Math.random() > 0.95) matrixDrops[i] = 0; matrixDrops[i] += (H/50) + 2; if(matrixDrops[i] > canvas.height) matrixDrops[i] = 0; } },
         helix: (c, o=0) => { const hY=canvas.height/2; ctx.lineWidth=2; for(let i=0; i<canvas.width; i+=5) { const idx = Math.floor((i/canvas.width) * frequencyData.length); const H = frequencyData[idx] * settings.sensitivity; const y1 = hY + Math.sin(i*0.02 + dynamicRotation)*50 + Math.sin(i*0.1)*H; const y2 = hY + Math.sin(i*0.02 + dynamicRotation + Math.PI)*50 - Math.sin(i*0.1)*H; ctx.fillStyle = c || getDrawColor(i/canvas.width); ctx.fillRect(i+o, y1, 3, 3); ctx.fillRect(i+o, y2, 3, 3); if(i%20===0) { ctx.strokeStyle = ctx.fillStyle; ctx.beginPath(); ctx.moveTo(i+o, y1); ctx.lineTo(i+o, y2); ctx.stroke(); } } },
         pixelGrid: (c, o=0) => { const cols=32, rows=18; const cw=canvas.width/cols, ch=canvas.height/rows; for(let y=0; y<rows; y++){ for(let x=0; x<cols; x++){ const idx = Math.floor(((x+y*cols)/(cols*rows)) * frequencyData.length); const val = frequencyData[idx]; if(val > 255 - (settings.sensitivity*50)) { ctx.fillStyle = c || getDrawColor(val/255); ctx.fillRect(x*cw+o, y*ch, cw-2, ch-2); } } } },
         radar: (c, o=0) => { const cx=canvas.width/2+o, cy=canvas.height/2, radius=Math.min(canvas.width, canvas.height)/2; const angle = dynamicRotation % (Math.PI*2); ctx.strokeStyle = c || getDrawColor(0.5); ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(angle)*radius, cy + Math.sin(angle)*radius); ctx.stroke(); ctx.fillStyle = `rgba(${backgroundRgb.r}, ${backgroundRgb.g}, ${backgroundRgb.b}, 0.1)`; ctx.arc(cx, cy, radius, angle, angle+0.5); ctx.fill(); for(let i=0; i<10; i++) { const r = (i/10)*radius; const val = frequencyData[i*10]; if(val>100) { ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2); ctx.strokeStyle = `rgba(255,255,255,${val/255})`; ctx.stroke(); } } },
         waves: (c, o=0) => { const l=frequencyData.length; for(let j=0; j<5; j++) { ctx.beginPath(); ctx.lineWidth=2; ctx.strokeStyle = c || getDrawColor(j/5); for(let i=0; i<canvas.width; i+=10) { const idx = Math.floor((i/canvas.width)*l); const val = frequencyData[idx] * settings.sensitivity; const y = canvas.height/2 + (j*30) - 60 + Math.sin(i*0.01 + dynamicRotation + j)*50 - val/2; i===0?ctx.moveTo(i+o, y):ctx.lineTo(i+o, y); } ctx.stroke(); } },
-        heartbeat: (c, o=0) => {
-            const l = timeDomainData.length, w = canvas.width / l;
-            let x = o;
-            ctx.lineWidth = 4;
-            const g = c ? c : ctx.createLinearGradient(0,0,canvas.width,0);
-            if(!c && !settings.rainbowMode){ settings.gradientColors.forEach((col,i)=>g.addColorStop(i/(settings.gradientColors.length-1), col)); }
-            ctx.strokeStyle = settings.rainbowMode ? getDrawColor(0.5) : g;
-            ctx.beginPath();
-            for(let i=0; i<l; i++) {
-                let v = (timeDomainData[i] - 128.0) * settings.sensitivity;
-                v = Math.sign(v) * Math.pow(Math.abs(v), 1.2); 
-                const y = canvas.height/2 - v;
-                if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
-                x += w;
-            }
-            ctx.stroke();
-        },
         frequencyWave: (c, o=0) => { const l=frequencyData.length, w=canvas.width/l; let x=o; ctx.lineWidth=3; const g = c ? c : ctx.createLinearGradient(0,0,canvas.width,0); if(!c && !settings.rainbowMode){ settings.gradientColors.forEach((col,i)=>g.addColorStop(i/(settings.gradientColors.length-1), col)); } ctx.strokeStyle=settings.rainbowMode ? getDrawColor(0.5) : g; ctx.beginPath(); for(let i=0;i<l;i++){ const H=frequencyData[i]*(settings.sensitivity/1.5), y=canvas.height-H; i===0?ctx.moveTo(x,y):ctx.lineTo(x,y); x+=w;} ctx.stroke(); },
+        heartbeat: (c, o=0) => { const l = timeDomainData.length, w = canvas.width / l; let x = o; ctx.lineWidth = 4; const g = c ? c : ctx.createLinearGradient(0,0,canvas.width,0); if(!c && !settings.rainbowMode){ settings.gradientColors.forEach((col,i)=>g.addColorStop(i/(settings.gradientColors.length-1), col)); } ctx.strokeStyle = settings.rainbowMode ? getDrawColor(0.5) : g; ctx.beginPath(); for(let i=0; i<l; i++) { let v = (timeDomainData[i] - 128.0) * settings.sensitivity; v = Math.sign(v) * Math.pow(Math.abs(v), 1.2); const y = canvas.height/2 - v; if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); x += w; } ctx.stroke(); },
         circularWaveform: (c, o=0) => { const l=timeDomainData.length, hX=canvas.width/2+o, hY=canvas.height/2; const g = c ? c : ctx.createLinearGradient(0,0,canvas.width,canvas.height); if(!c && !settings.rainbowMode){ settings.gradientColors.forEach((col,i)=>g.addColorStop(i/(settings.gradientColors.length-1), col)); } ctx.strokeStyle = settings.rainbowMode ? getDrawColor(0.5) : g; ctx.lineWidth=3; ctx.beginPath(); for(let i=0;i<l;i++){ const d=(timeDomainData[i]-128), r=200+(d*(settings.sensitivity/1.5)), a=(i/l)*2*Math.PI, x=hX+Math.cos(a)*r, y=hY+Math.sin(a)*r; i===0?ctx.moveTo(x,y):ctx.lineTo(x,y); } ctx.closePath(); ctx.stroke();},
-        waveform: (c, o=0) => { const l=timeDomainData.length, w=canvas.width*1.0/l; let x=o; ctx.lineWidth=3; const g = c ? c : ctx.createLinearGradient(0,0,canvas.width,0); if(!c && !settings.rainbowMode){ settings.gradientColors.forEach((col,i)=>g.addColorStop(i/(settings.gradientColors.length-1), col)); } ctx.strokeStyle=settings.rainbowMode ? getDrawColor(0.5) : g; ctx.beginPath(); for(let i=0;i<l;i++){ const v=timeDomainData[i]/128.0, y=v*canvas.height/2; i===0?ctx.moveTo(x,y):ctx.lineTo(x,y); x+=w;} ctx.lineTo(canvas.width+o,canvas.height/2); ctx.stroke();}
+        waveform: (c, o=0) => { const l=timeDomainData.length, w=canvas.width*1.0/l; let x=o; ctx.lineWidth=3; const g = c ? c : ctx.createLinearGradient(0,0,canvas.width,0); if(!c && !settings.rainbowMode){ settings.gradientColors.forEach((col,i)=>g.addColorStop(i/(settings.gradientColors.length-1), col)); } ctx.strokeStyle=settings.rainbowMode ? getDrawColor(0.5) : g; ctx.beginPath(); for(let i=0;i<l;i++){ const v=timeDomainData[i]/128.0, y=v*canvas.height/2; i===0?ctx.moveTo(x,y):ctx.lineTo(x,y); x+=w;} ctx.lineTo(canvas.width+o,canvas.height/2); ctx.stroke();},
+        tunnel: (c, o=0) => { const hX = canvas.width / 2 + o, hY = canvas.height / 2; const bass = frequencyData[2] * (settings.sensitivity / 2); ctx.lineWidth = 2 + bass/20; const numRings = 15; for(let i=1; i<=numRings; i++) { const phase = ((i + dynamicRotation/2) % numRings) / numRings; const r = phase * Math.max(canvas.width, canvas.height); const C = c || getDrawColor(phase); ctx.globalAlpha = Math.max(0, 1 - phase); settings.filledShapes ? ctx.fillStyle = C : ctx.strokeStyle = C; const currentRot = dynamicRotation*(i%2==0?1:-1); if(settings.circularDirection === 'inward') { drawPolygon(hX, hY, 6, Math.max(0.1, Math.max(canvas.width, canvas.height) - r), currentRot, C); } else { drawPolygon(hX, hY, 6, Math.max(0.1, r), currentRot, C); } } ctx.globalAlpha = 1.0; },
+        hyperspace: (c, o=0) => { if(!window.stars) window.stars = Array.from({length: 400}, () => ({x: (Math.random()-0.5)*2000, y: (Math.random()-0.5)*2000, z: Math.random()*2000})); const cx = canvas.width/2 + o, cy = canvas.height/2; const avg = getAverageVolume(frequencyData); const speed = 2 + (avg/255)*30 * settings.sensitivity; ctx.globalCompositeOperation = 'screen'; window.stars.forEach((star, i) => { star.z -= speed; if(star.z <= 0) { star.z = 2000; star.x = (Math.random()-0.5)*2000; star.y = (Math.random()-0.5)*2000; } const px = cx + (star.x / star.z) * 500, py = cy + (star.y / star.z) * 500; if (px >= 0 && px <= canvas.width && py >= 0 && py <= canvas.height) { const size = Math.max(0.1, (2000 - star.z) / 400); const C = c || getDrawColor(i / 400); ctx.fillStyle = C; ctx.beginPath(); ctx.arc(px, py, size, 0, Math.PI*2); ctx.fill(); if(avg > 100 && i % 10 === 0) { ctx.strokeStyle = C; ctx.globalAlpha = (avg-100)/155 * 0.5; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(px, py); ctx.stroke(); ctx.globalAlpha = 1.0; } } }); ctx.globalCompositeOperation = 'source-over'; },
+        wireframeSphere: (c, o=0) => { const cx = canvas.width/2 + o, cy = canvas.height/2; const rBase = Math.min(canvas.width, canvas.height) / 4; const bands = 12, segments = 24, l = frequencyData.length; ctx.lineWidth = 1.5; for(let i=0; i<=bands; i++) { const theta = (i / bands) * Math.PI; ctx.beginPath(); for(let j=0; j<=segments; j++) { const phi = (j / segments) * Math.PI * 2 + dynamicRotation; const freqIdx = Math.floor(((i*segments + j) / (bands*segments)) * (l/2)); const H = frequencyData[freqIdx] * (settings.sensitivity/2); const r = rBase + H; const x3d = r * Math.sin(theta) * Math.cos(phi), y3d = r * Math.cos(theta), z3d = r * Math.sin(theta) * Math.sin(phi); const fov = 500, z = z3d + fov, x = cx + (x3d * fov) / z, y = cy + (y3d * fov) / z; if (j===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); } ctx.closePath(); const C = c || getDrawColor(i/bands); settings.filledShapes ? ctx.fillStyle = C : ctx.strokeStyle = C; settings.filledShapes ? (ctx.globalAlpha=0.1, ctx.fill(), ctx.globalAlpha=1.0) : null; ctx.stroke(); } },
+        rings: (c, o=0) => { const hX = canvas.width / 2 + o, hY = canvas.height / 2; const buckets = 5; const l = Math.floor(frequencyData.length / 2); for(let b=1; b<=buckets; b++) { ctx.beginPath(); const C = c || getDrawColor(b/buckets); settings.filledShapes ? ctx.fillStyle = C : ctx.strokeStyle = C; ctx.lineWidth = 3; const baseRadius = b * 80; for(let i=0; i<l; i++) { const H = frequencyData[Math.floor(i * (frequencyData.length / l))] * (settings.sensitivity/2); const deformation = (i % b === 0) ? H : H/2; const r = baseRadius + deformation; const a = (i/l)*2*Math.PI + (dynamicRotation * (b%2==0?1:-1)); const x = hX + Math.cos(a)*r, y = hY + Math.sin(a)*r; if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); } ctx.closePath(); settings.filledShapes ? ctx.globalAlpha = 0.2 : ctx.globalAlpha = 1; settings.filledShapes ? ctx.fill() : ctx.stroke(); ctx.globalAlpha = 1.0; } },
+        floatingDust: (c, o=0) => { if(!window.dustArray) window.dustArray = Array.from({length: 150}, () => ({x: Math.random(), y: Math.random(), s: Math.random(), v: Math.random()*0.001 + 0.0005})); const l = frequencyData.length; const avg = getAverageVolume(frequencyData); const intensity = Math.min(1, avg / 140); window.dustArray.forEach((dust, i) => { const freqIdx = Math.floor((i / 150) * l); const H = frequencyData[freqIdx] * settings.sensitivity; dust.y -= (dust.v + (H / 20000) * (intensity + 0.1)); if(dust.y < 0) { dust.y = 1; dust.x = Math.random(); } const px = dust.x * canvas.width + o, py = dust.y * canvas.height; const radius = (dust.s * 5) + (H / 20); ctx.beginPath(); ctx.arc(px, py, Math.max(0.1, radius), 0, Math.PI*2); const C = c || getDrawColor(dust.y); ctx.fillStyle = C; ctx.globalAlpha = Math.min(1, H/100 + 0.2); ctx.fill(); }); ctx.globalAlpha = 1.0; },
+        
+        // --- 5 MISSING VISUALIZERS RESTORED ---
+        vortex: (c, o=0) => { const l = frequencyData.length; const cx = canvas.width / 2 + o, cy = canvas.height / 2; ctx.beginPath(); for(let i=0; i<l/2; i++) { const val = frequencyData[i] * settings.sensitivity; const angle = i * 0.1 + dynamicRotation; const r = i * 2 + val; const x = cx + Math.cos(angle) * r; const y = cy + Math.sin(angle) * r; if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); } ctx.lineWidth = 2 + (frequencyData[2]*settings.sensitivity/50); ctx.strokeStyle = c || getDrawColor(0.5); ctx.stroke(); },
+        honeycomb: (c, o=0) => { const hexRadius = 20; const hexHeight = hexRadius * Math.sqrt(3); const cols = Math.ceil(canvas.width / (hexRadius * 1.5)) + 1; const rows = Math.ceil(canvas.height / hexHeight) + 1; for(let y=0; y<rows; y++) { for(let x=0; x<cols; x++) { const cx = x * hexRadius * 1.5 + o; const cy = y * hexHeight + (x%2===1 ? hexHeight/2 : 0); const idx = Math.floor(((x+y*cols)/(cols*rows)) * (frequencyData.length/2)); const val = frequencyData[idx] * settings.sensitivity; if (val > 50) { ctx.beginPath(); for(let i=0; i<6; i++) { const angle = i * Math.PI / 3; const hx = cx + Math.cos(angle) * (hexRadius - 2 + val/20); const hy = cy + Math.sin(angle) * (hexRadius - 2 + val/20); if(i===0) ctx.moveTo(hx,hy); else ctx.lineTo(hx,hy); } ctx.closePath(); const color = c || getDrawColor(val/255); settings.filledShapes ? (ctx.fillStyle=color, ctx.fill()) : (ctx.strokeStyle=color, ctx.lineWidth=2, ctx.stroke()); } } } },
+        laser: (c, o=0) => { const l = Math.floor(frequencyData.length/4); const cy = canvas.height/2; ctx.lineWidth = 4; ctx.globalCompositeOperation = 'screen'; for(let i=1; i<4; i++) { ctx.beginPath(); ctx.moveTo(o, cy); const color = c || getDrawColor(i/4); ctx.strokeStyle = color; ctx.shadowBlur = 15; ctx.shadowColor = color; for(let j=1; j<l; j+=5) { const val = frequencyData[j] * settings.sensitivity; const x = o + (j/l)*canvas.width; const y = cy + (val * Math.sin(j + dynamicRotation*i) * (i%2===0?1:-1)); ctx.lineTo(x, y); } ctx.stroke(); } ctx.shadowBlur = 0; ctx.globalCompositeOperation = 'source-over'; },
+        constellation: (c, o=0) => { if(!window.constellationNodes) window.constellationNodes = Array.from({length: 80}, () => ({x: Math.random()*canvas.width, y: Math.random()*canvas.height, vx: (Math.random()-0.5)*2, vy: (Math.random()-0.5)*2})); const avg = getAverageVolume(frequencyData); const color = c || getDrawColor(0.5); ctx.fillStyle = color; ctx.strokeStyle = color; for(let i=0; i<window.constellationNodes.length; i++) { let n1 = window.constellationNodes[i]; n1.x += n1.vx * (1 + avg/50); n1.y += n1.vy * (1 + avg/50); if(n1.x < 0 || n1.x > canvas.width) n1.vx *= -1; if(n1.y < 0 || n1.y > canvas.height) n1.vy *= -1; const val = frequencyData[i % frequencyData.length] * settings.sensitivity; const r = 2 + val/30; ctx.beginPath(); ctx.arc(n1.x + o, n1.y, r, 0, Math.PI*2); ctx.fill(); for(let j=i+1; j<window.constellationNodes.length; j++) { let n2 = window.constellationNodes[j]; const dist = Math.hypot(n1.x-n2.x, n1.y-n2.y); if(dist < 150 + val) { ctx.globalAlpha = 1 - (dist / (150+val)); ctx.lineWidth = 1 + val/100; ctx.beginPath(); ctx.moveTo(n1.x+o, n1.y); ctx.lineTo(n2.x+o, n2.y); ctx.stroke(); } } } ctx.globalAlpha = 1.0; },
+        ripples: (c, o=0) => { if(!window.ripplesArray) window.ripplesArray = []; const bass = frequencyData[2]; if(bass > 200 && Math.random() > 0.8) { window.ripplesArray.push({ x: Math.random()*canvas.width + o, y: Math.random()*canvas.height, r: 0, alpha: 1, color: c || getDrawColor(Math.random()) }); } for(let i=window.ripplesArray.length-1; i>=0; i--) { let r = window.ripplesArray[i]; r.r += 5 + (bass/50); r.alpha -= 0.02; if(r.alpha <= 0) { window.ripplesArray.splice(i, 1); } else { ctx.beginPath(); ctx.arc(r.x, r.y, r.r, 0, Math.PI*2); ctx.strokeStyle = r.color; ctx.globalAlpha = r.alpha; ctx.lineWidth = 3; ctx.stroke(); } } ctx.globalAlpha = 1.0; }
     };
-    
     function drawPolygon(x,y,s,r,rot,C){ctx.beginPath(); for(let i=0;i<s;i++){ctx.lineTo(x+r*Math.cos(rot+i*2*Math.PI/s),y+r*Math.sin(rot+i*2*Math.PI/s));} ctx.closePath(); settings.filledShapes?ctx.fill():ctx.stroke();}
     function drawProfileImage() { if (!profileImage || !profileImage.complete) return; const centerX = canvas.width / 2, centerY = canvas.height / 2; const size = 120; ctx.save(); ctx.beginPath(); ctx.arc(centerX, centerY, size / 2, 0, Math.PI * 2); ctx.clip(); ctx.drawImage(profileImage, centerX - size / 2, centerY - size / 2, size, size); ctx.restore(); }
     
@@ -378,7 +203,7 @@ window.addEventListener('DOMContentLoaded', () => {
             hiddenCtx.drawImage(img, 0, 0, 10, 10);
             try {
                 const data = hiddenCtx.getImageData(0, 0, 10, 10).data;
-                const colors =[];
+                const colors = [];
                 const indices =[0, 36, 360, 396, 220]; 
                 indices.forEach(idx => {
                     const r = data[idx], g = data[idx+1], b = data[idx+2];
@@ -413,6 +238,8 @@ window.addEventListener('DOMContentLoaded', () => {
     async function handleAccentCheck() { if (settings.useAccentColor) { gradientControls.classList.add('disabled'); const accentHex = await window.electronAPI.getAccentColor(); const accentHSL = hexToHsl(accentHex); const startColor = hslToHex(accentHSL.h, accentHSL.s, Math.max(0, accentHSL.l - 20)); const endColor = hslToHex(accentHSL.h, Math.min(100, accentHSL.s + 10), Math.min(100, accentHSL.l + 20)); settings.gradientColors =[startColor, accentHex, endColor]; } else { gradientControls.classList.remove('disabled'); } updateGradientUI(); saveSettings(); }
     function handleSilence(avgVolume) { const silenceThreshold = 3, silenceDuration = 180; if (avgVolume < silenceThreshold) { silenceCounter++; } else { silenceCounter = 0; silentMessage.classList.add('hidden'); if (silentMessageInterval) { clearInterval(silentMessageInterval); silentMessageInterval = null; } } if (silenceCounter > silenceDuration && !silentMessageInterval) { silentMessage.classList.remove('hidden'); let messageIndex = 0; const messages = silenceMessages[settings.audioType]; silentMessage.textContent = messages[messageIndex]; silentMessageInterval = setInterval(() => { messageIndex = (messageIndex + 1) % messages.length; silentMessage.textContent = messages[messageIndex]; }, 4000); } }
     function drawWatermark(intensity) { ctx.font = '16px "Segoe UI", Arial, sans-serif'; const opacity = 0.1 + intensity * 0.6; ctx.fillStyle = `rgba(${backgroundRgb.r > 128 ? 0 : 255}, ${backgroundRgb.g > 128 ? 0 : 255}, ${backgroundRgb.b > 128 ? 0 : 255}, ${opacity})`; ctx.textAlign = 'right'; ctx.fillText('Made by EchoesRealmArrow', canvas.width - 20, canvas.height - 20); ctx.textAlign = 'left'; }
+    function spawnParticles(x, y, intensity, color) { if (!settings.enableParticles || intensity < 0.2 || particles.length >= MAX_PARTICLES) return; const count = Math.ceil(intensity * settings.particleAmount); for (let i = 0; i < count; i++) { if (particles.length >= MAX_PARTICLES) break; particles.push({ x, y, vx: (Math.random() - 0.5) * 4, vy: (Math.random() - 0.5) * 4 - 2, life: settings.particleLifespan, size: 2 + Math.random() * 3, color }); } }
+    function updateAndDrawParticles() { const gravity = settings.particleGravity / 100; for (let i = particles.length - 1; i >= 0; i--) { const p = particles[i]; p.x += p.vx; p.y += p.vy; p.vy += gravity; p.life--; p.size *= 0.98; if (p.life <= 0 || p.size < 0.5) { particles.splice(i, 1); } else { ctx.fillStyle = p.color; ctx.globalAlpha = p.life / settings.particleLifespan; ctx.fillRect(p.x, p.y, p.size, p.size); } } ctx.globalAlpha = 1.0; }
     function setupCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
     function hexToRgb(hex) { const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex); return result ? { r: parseInt(result[1], 16), g: parseInt(result[2], 16), b: parseInt(result[3], 16) } : { r: 0, g: 0, b: 0 }; }
     function hexToHsl(H) { let r = 0, g = 0, b = 0; if (H.length == 7) { r = parseInt(H.substring(1,3), 16); g = parseInt(H.substring(3,5), 16); b = parseInt(H.substring(5,7), 16); } r /= 255; g /= 255; b /= 255; let cmin = Math.min(r,g,b), cmax = Math.max(r,g,b), delta = cmax - cmin, h = 0, s = 0, l = 0; if (delta == 0) h = 0; else if (cmax == r) h = ((g - b) / delta) % 6; else if (cmax == g) h = (b - r) / delta + 2; else h = (r - g) / delta + 4; h = Math.round(h * 60); if (h < 0) h += 360; l = (cmax + cmin) / 2; s = delta == 0 ? 0 : delta / (1 - Math.abs(2 * l - 1)); s = +(s * 100).toFixed(1); l = +(l * 100).toFixed(1); return { h, s, l }; }
@@ -420,26 +247,29 @@ window.addEventListener('DOMContentLoaded', () => {
     function getAverageVolume(dataArray) { let sum = 0; if (dataArray) { for (let i = 0; i < dataArray.length; i++) { sum += dataArray[i]; } return sum / dataArray.length; } return 0; }
     function getMultiStopGradientColor(fraction) { if (!settings.gradientColors || settings.gradientColors.length < 2) return (settings.gradientColors && settings.gradientColors[0]) || '#ffffff'; const stopIndex = fraction * (settings.gradientColors.length - 1); const startIndex = Math.floor(stopIndex); const endIndex = Math.min(startIndex + 1, settings.gradientColors.length - 1); const localFraction = stopIndex - startIndex; const start = hexToRgb(settings.gradientColors[startIndex]); const end = hexToRgb(settings.gradientColors[endIndex]); const r = Math.round(start.r + (end.r - start.r) * localFraction); const g = Math.round(start.g + (end.g - start.g) * localFraction); const b = Math.round(start.b + (end.b - start.b) * localFraction); return `rgb(${r}, ${g}, ${b})`; }
     function getDrawColor(fraction) { if (settings.rainbowMode) { const hue = (fraction * 360) + rainbowHueOffset; return `hsl(${hue % 360}, 100%, 50%)`; } return getMultiStopGradientColor(fraction); }
-    function handleVisualizerOptionsVisibility() { const type = settings.visualizerType; const hasFillOption =['blob', 'sunburst', 'polygons', 'nestedPolygons', 'shatter', 'flower', 'kaleidoscope', 'tunnel', 'rings', 'wireframeSphere'].includes(type); const hasDirectionOption = ['circle', 'tunnel'].includes(type); const hasRotationOption =['polygons', 'nestedPolygons', 'starfield', 'kaleidoscope', 'tunnel', 'rings', 'wireframeSphere'].includes(type); visualizerOptionsFieldset.classList.toggle('hidden', !hasFillOption && !hasDirectionOption && !hasRotationOption); fillCheckbox.parentElement.style.display = hasFillOption ? '' : 'none'; directionSelect.parentElement.style.display = hasDirectionOption ? '' : 'none'; rotationSlider.parentElement.style.display = hasRotationOption ? '' : 'none'; }
+    function handleVisualizerOptionsVisibility() { const type = settings.visualizerType; const hasFillOption =['blob', 'sunburst', 'polygons', 'nestedPolygons', 'shatter', 'flower', 'kaleidoscope', 'tunnel', 'rings', 'wireframeSphere', 'honeycomb'].includes(type); const hasDirectionOption = ['circle', 'tunnel'].includes(type); const hasRotationOption =['polygons', 'nestedPolygons', 'starfield', 'kaleidoscope', 'tunnel', 'rings', 'wireframeSphere', 'vortex', 'laser'].includes(type); visualizerOptionsFieldset.classList.toggle('hidden', !hasFillOption && !hasDirectionOption && !hasRotationOption); fillCheckbox.parentElement.style.display = hasFillOption ? '' : 'none'; directionSelect.parentElement.style.display = hasDirectionOption ? '' : 'none'; rotationSlider.parentElement.style.display = hasRotationOption ? '' : 'none'; }
     function handleRainbowModeVisibility() { rainbowControls.classList.toggle('hidden', !settings.rainbowMode); gradientControls.classList.toggle('disabled', settings.rainbowMode || settings.useAccentColor); accentColorCheckbox.disabled = settings.rainbowMode; }
+    function setProfileImage(path) { if (path) { profileImage = new Image(); profileImage.src = path; settings.profileImagePath = path; pfpPreview.src = path; pfpPreview.classList.remove('hidden'); } else { profileImage = null; settings.profileImagePath = null; pfpPreview.src = '#'; pfpPreview.classList.add('hidden'); } saveSettings(); }
     
-    function setProfileImage(base64Data) { 
-        if (base64Data) { 
-            profileImage = new Image(); 
-            profileImage.src = base64Data; 
-            settings.profileImagePath = base64Data; 
-            pfpPreview.src = base64Data; 
-            pfpPreview.classList.remove('hidden'); 
-        } else { 
-            profileImage = null; 
-            settings.profileImagePath = null; 
-            pfpPreview.src = '#'; 
-            pfpPreview.classList.add('hidden'); 
-        } 
-        saveSettings(); 
-    }
-
     // --- EVENT LISTENERS ---
+    setupCanvas(); loadSettings(); window.addEventListener('resize', setupCanvas);
+    
+    // STARTUP BUTTON LISTENER
+    acceptWarningButton.addEventListener('click', async () => {
+        epilepsyWarning.style.opacity = '0';
+        setTimeout(() => { epilepsyWarning.style.display = 'none'; }, 500);
+        uiContainer.classList.add('visible');
+        await startOrUpdateAudioSource();
+        await populateMicrophoneList();
+        updateAudioSourceUI();
+        handleAccentCheck();
+        updateGradientUI();
+        handleVisualizerOptionsVisibility();
+        handleRainbowModeVisibility();
+        
+        // FIX: This is the missing line that actually starts the visualizer loop!
+        draw(); 
+    }, { once: true });
     
     visBtns.forEach(btn => {
         btn.addEventListener('click', (e) => {
@@ -448,30 +278,16 @@ window.addEventListener('DOMContentLoaded', () => {
             e.target.classList.add('active');
             handleVisualizerOptionsVisibility();
             saveSettings();
+            updateContrast();
         });
     });
 
     settingsButton.addEventListener('click', () => settingsPanel.classList.toggle('open'));
     closeSettingsButton.addEventListener('click', () => settingsPanel.classList.remove('open'));
     
-    selectPfpButton.addEventListener('click', async () => { 
-        const paths = await window.electronAPI.showOpenDialog({ properties: ['openFile'], filters:[{ name: 'Images', extensions:['png', 'jpg', 'jpeg'] }] }); 
-        if (paths && paths[0]) {
-            const b64 = await window.electronAPI.readFileBase64(paths[0]);
-            if (b64) setProfileImage(b64);
-        }
-    });
-    
+    selectPfpButton.addEventListener('click', async () => { const paths = await window.electronAPI.showOpenDialog({ properties: ['openFile'], filters:[{ name: 'Images', extensions:['png', 'jpg', 'jpeg'] }] }); if (paths && paths[0]) { const b64 = await window.electronAPI.readFileBase64(paths[0]); if (b64) setProfileImage(b64); } });
     clearPfpButton.addEventListener('click', () => setProfileImage(null));
-    
-    extractColorsButton.addEventListener('click', async () => { 
-        const paths = await window.electronAPI.showOpenDialog({ properties:['openFile'], filters: [{ name: 'Images', extensions:['png', 'jpg', 'jpeg'] }] }); 
-        if (paths && paths[0]) {
-            const b64 = await window.electronAPI.readFileBase64(paths[0]);
-            if (b64) extractColorsFromImage(b64);
-        }
-    });
-    
+    extractColorsButton.addEventListener('click', async () => { const paths = await window.electronAPI.showOpenDialog({ properties:['openFile'], filters: [{ name: 'Images', extensions:['png', 'jpg', 'jpeg'] }] }); if (paths && paths[0]) { const b64 = await window.electronAPI.readFileBase64(paths[0]); if (b64) extractColorsFromImage(b64); } });
     audioSourceSelect.addEventListener('change', () => { settings.audioType = audioSourceSelect.value; updateAudioSourceUI(); saveSettings(); startOrUpdateAudioSource(); });
     microphoneSelect.addEventListener('change', () => { settings.microphoneId = microphoneSelect.value; saveSettings(); startOrUpdateAudioSource(); });
     fillCheckbox.addEventListener('change', (e) => { settings.filledShapes = e.target.checked; saveSettings(); });
@@ -492,6 +308,10 @@ window.addEventListener('DOMContentLoaded', () => {
     scanlineSlider.addEventListener('input', (e) => { settings.scanlines = parseInt(e.target.value); saveSettings(); });
     rainbowCheckbox.addEventListener('change', (e) => { settings.rainbowMode = e.target.checked; handleRainbowModeVisibility(); saveSettings(); });
     rainbowSpeedSlider.addEventListener('input', (e) => { settings.rainbowSpeed = parseInt(e.target.value); saveSettings(); });
-    
-    draw(); 
+    particleCheckbox.addEventListener('change', (e) => { settings.enableParticles = e.target.checked; saveSettings(); });
+    particleAmountSlider.addEventListener('input', (e) => { settings.particleAmount = parseInt(e.target.value); saveSettings(); });
+    particleGravitySlider.addEventListener('input', (e) => { settings.particleGravity = parseInt(e.target.value); saveSettings(); });
+    particleLifespanSlider.addEventListener('input', (e) => { settings.particleLifespan = parseInt(e.target.value); saveSettings(); });
+
+    draw(); // Start the visualizer loop
 });

@@ -1,4 +1,3 @@
-/* --- Basic Reset & Full-Screen Setup --- */
 * { box-sizing: border-box; }
 :root { --text-color: #ffffff; }
 html, body { margin: 0; padding: 0; width: 100vw; height: 100vh; overflow: hidden; background-color: #000000; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
@@ -6,14 +5,12 @@ html, body { margin: 0; padding: 0; width: 100vw; height: 100vh; overflow: hidde
 
 body, h1, h2, h3, p, label, select, input { color: var(--text-color); }
 
-/* --- EPILEPSY WARNING OVERLAY --- */
 #epilepsyWarning { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; background-color: rgba(0, 0, 0, 0.95); z-index: 1000; text-align: center; padding: 40px; transition: opacity 0.5s ease; }
 #epilepsyWarning h1 { color: #ff4d4d; font-size: 3.5em; margin-bottom: 20px; text-shadow: 0 0 20px rgba(255, 0, 0, 0.6); }
 #epilepsyWarning p { font-size: 1.2em; max-width: 800px; margin-bottom: 20px; line-height: 1.6; color: #ddd; }
 .warning-btn { font-size: 1.5em; padding: 15px 40px; margin-top: 20px; background-color: #d32f2f; color: white; border: 2px solid #ff4d4d; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; font-weight: bold; }
 .warning-btn:hover { background-color: #ff1a1a; box-shadow: 0 0 20px rgba(255, 77, 77, 0.8); transform: scale(1.05); }
 
-/* --- Overlays (Silence, Metadata) --- */
 #silentMessage { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; transition: opacity 0.5s ease; font-size: 1.8em; opacity: 0.7; text-shadow: 0 0 10px #000; pointer-events: none; z-index: 50; }
 #metadataDisplay { position: absolute; bottom: 20px; left: 20px; text-shadow: 0 0 8px rgba(0, 0, 0, 0.8); z-index: 50; transition: opacity 0.5s ease; }
 #metadataDisplay p { margin: 0; line-height: 1.2; } 
@@ -21,14 +18,12 @@ body, h1, h2, h3, p, label, select, input { color: var(--text-color); }
 #metaArtist { font-size: 1.2em; opacity: 0.8; }
 .hidden { opacity: 0 !important; pointer-events: none !important; display: none !important; }
 
-/* --- UI Container & Buttons --- */
 #uiContainer { position: absolute; top: 20px; right: 20px; display: flex; gap: 10px; opacity: 0; pointer-events: none; transition: opacity 0.5s ease; z-index: 100; }
 #uiContainer.visible { opacity: 1; pointer-events: all; }
 .ui-button { height: 40px; padding: 8px; cursor: pointer; background-color: rgba(30, 30, 30, 0.7); border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: background-color 0.2s ease; border: none; }
 .ui-button:hover { background-color: rgba(50, 50, 50, 0.9); }
 .ui-button svg { width: 24px; height: 24px; color: var(--text-color); }
 
-/* --- Sidebar Styles --- */
 .sidebar { position: absolute; top: 0; right: 0; width: 450px; max-width: 100vw; height: 100vh; background-color: rgba(26, 26, 26, 0.95); backdrop-filter: blur(10px); box-shadow: -10px 0 30px rgba(0,0,0,0.5); z-index: 102; transform: translateX(100%); transition: transform 0.4s ease-in-out; display: flex; flex-direction: column; }
 .sidebar.open { transform: translateX(0); }
 .sidebar-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background-color: rgba(44, 44, 44, 0.8); }
@@ -61,7 +56,6 @@ fieldset.disabled { opacity: 0.5; pointer-events: none; }
 #addColorButton { padding: 5px 10px; font-size: 1.2em; width: 100%; margin-top: 10px; }
 #pfpPreview { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 1px solid #555; margin-top: 10px; }
 
-/* --- Visualizer Button Grid --- */
 .setting-group-title { font-weight: bold; margin: 15px 0 10px 0; border-bottom: 1px solid #444; padding-bottom: 5px; color: #aaa; font-size: 0.9em; text-transform: uppercase; letter-spacing: 1px; }
 .visualizer-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; max-height: 300px; overflow-y: auto; padding-right: 5px; margin-bottom: 20px; }
 .visualizer-grid::-webkit-scrollbar { width: 6px; }
