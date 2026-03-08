@@ -7,7 +7,8 @@
   "license": "MIT",
   "scripts": {
     "start": "electron . --no-sandbox",
-    "build": "electron-builder"
+    "build": "electron-builder",
+    "install": "npm install"
   },
   "build": {
     "appId": "com.echoesrealm.visualizer",
