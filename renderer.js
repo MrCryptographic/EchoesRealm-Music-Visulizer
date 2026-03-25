@@ -1,6 +1,6 @@
 window.addEventListener('DOMContentLoaded', () => {
     // --- DOM ELEMENT REFERENCES ---
-    const canvas = document.getElementById('visualizerCanvas'), ctx = canvas.getContext('2d'), epilepsyWarning = document.getElementById('epilepsyWarning'), acceptWarningButton = document.getElementById('acceptWarningButton'), uiContainer = document.getElementById('uiContainer'), settingsButton = document.getElementById('settingsButton'), settingsPanel = document.getElementById('settingsPanel'), closeSettingsButton = document.getElementById('closeButton'), visualizerOptionsFieldset = document.getElementById('visualizerOptionsFieldset'), fillCheckbox = document.getElementById('fillCheckbox'), directionSelect = document.getElementById('directionSelect'), rotationSlider = document.getElementById('rotationSlider'), selectPfpButton = document.getElementById('selectPfpButton'), clearPfpButton = document.getElementById('clearPfpButton'), pfpPreview = document.getElementById('pfpPreview'), dynamicEffectsFieldset = document.getElementById('dynamicEffectsFieldset'), visualizerSelect = document.getElementById('visualizerSelect'), dynamicCheckbox = document.getElementById('dynamicCheckbox'), shakeSlider = document.getElementById('shakeSlider'), aberrationSlider = document.getElementById('aberrationSlider'), glowSlider = document.getElementById('glowSlider'), glowColor = document.getElementById('glowColor'), scanlineSlider = document.getElementById('scanlineSlider'), particleCheckbox = document.getElementById('particleCheckbox'), particleAmountSlider = document.getElementById('particleAmountSlider'), particleGravitySlider = document.getElementById('particleGravitySlider'), particleLifespanSlider = document.getElementById('particleLifespanSlider'), accentColorCheckbox = document.getElementById('accentColorCheckbox'), gradientControls = document.getElementById('gradientControls'), gradientPickerContainer = document.getElementById('gradientPickerContainer'), addColorButton = document.getElementById('addColorButton'), extractColorsButton = document.getElementById('extractColorsButton'), backgroundColorInput = document.getElementById('backgroundColor'), gradientBgCheckbox = document.getElementById('gradientBgCheckbox'), sensitivitySlider = document.getElementById('sensitivitySlider'), smoothingSlider = document.getElementById('smoothingSlider'), trailSlider = document.getElementById('trailSlider'), metadataDisplay = document.getElementById('metadataDisplay'), metaTitle = document.getElementById('metaTitle'), metaArtist = document.getElementById('metaArtist'), silentMessage = document.getElementById('silentMessage'), audioSourceSelect = document.getElementById('audioSourceSelect'), microphoneSelectRow = document.getElementById('microphoneSelectRow'), microphoneSelect = document.getElementById('microphoneSelect'), rainbowCheckbox = document.getElementById('rainbowCheckbox'), rainbowControls = document.getElementById('rainbowControls'), rainbowSpeedSlider = document.getElementById('rainbowSpeedSlider');
+    const canvas = document.getElementById('visualizerCanvas'), ctx = canvas.getContext('2d'), epilepsyWarning = document.getElementById('epilepsyWarning'), acceptWarningButton = document.getElementById('acceptWarningButton'), uiContainer = document.getElementById('uiContainer'), settingsButton = document.getElementById('settingsButton'), settingsPanel = document.getElementById('settingsPanel'), closeSettingsButton = document.getElementById('closeButton'), visualizerOptionsFieldset = document.getElementById('visualizerOptionsFieldset'), fillCheckbox = document.getElementById('fillCheckbox'), directionSelect = document.getElementById('directionSelect'), rotationSlider = document.getElementById('rotationSlider'), selectPfpButton = document.getElementById('selectPfpButton'), clearPfpButton = document.getElementById('clearPfpButton'), pfpPreview = document.getElementById('pfpPreview'), dynamicEffectsFieldset = document.getElementById('dynamicEffectsFieldset'), dynamicCheckbox = document.getElementById('dynamicCheckbox'), shakeSlider = document.getElementById('shakeSlider'), aberrationSlider = document.getElementById('aberrationSlider'), glowSlider = document.getElementById('glowSlider'), glowColor = document.getElementById('glowColor'), scanlineSlider = document.getElementById('scanlineSlider'), accentColorCheckbox = document.getElementById('accentColorCheckbox'), gradientControls = document.getElementById('gradientControls'), gradientPickerContainer = document.getElementById('gradientPickerContainer'), addColorButton = document.getElementById('addColorButton'), extractColorsButton = document.getElementById('extractColorsButton'), backgroundColorInput = document.getElementById('backgroundColor'), gradientBgCheckbox = document.getElementById('gradientBgCheckbox'), sensitivitySlider = document.getElementById('sensitivitySlider'), smoothingSlider = document.getElementById('smoothingSlider'), trailSlider = document.getElementById('trailSlider'), metadataDisplay = document.getElementById('metadataDisplay'), metaTitle = document.getElementById('metaTitle'), metaArtist = document.getElementById('metaArtist'), silentMessage = document.getElementById('silentMessage'), audioSourceSelect = document.getElementById('audioSourceSelect'), microphoneSelectRow = document.getElementById('microphoneSelectRow'), microphoneSelect = document.getElementById('microphoneSelect'), rainbowCheckbox = document.getElementById('rainbowCheckbox'), rainbowControls = document.getElementById('rainbowControls'), rainbowSpeedSlider = document.getElementById('rainbowSpeedSlider');
     const visBtns = document.querySelectorAll('.vis-btn');
 
     // --- GLOBAL STATE ---
@@ -9,6 +9,7 @@ window.addEventListener('DOMContentLoaded', () => {
     let profileImage = null; 
     let matrixDrops = []; 
     let particles = [];
+    let shockwaves = [];
     const MAX_PARTICLES = 3000;
 
     const defaultSettings = { 
@@ -44,6 +45,11 @@ window.addEventListener('DOMContentLoaded', () => {
         handleVisualizerOptionsVisibility();
         handleRainbowModeVisibility();
         
+        // This resumes the context if it started suspended (common on Linux/Chrome)
+        if (audioContext && audioContext.state === 'suspended') {
+            await audioContext.resume();
+        }
+
         draw(); 
     }, { once: true });
 
@@ -127,7 +133,7 @@ window.addEventListener('DOMContentLoaded', () => {
         handleSilence(avgVolume);
     }
     
-    // --- DRAWING FUNCTIONS (ALL 34) ---
+    // --- DRAWING FUNCTIONS ---
     const drawFuncs = {
         centerBars: (c, o=0) => { const l=frequencyData.length, w=(canvas.width/2)/(l/2), h=canvas.width/2; for(let i=0;i<l/2;i++){ const H=frequencyData[i]*settings.sensitivity, C=c||getDrawColor(i/(l/2)); ctx.fillStyle=C; const x1=h+(i*w)+o, x2=h-(i*w)-w+o; ctx.fillRect(x1,canvas.height/2-H/2,w,H); ctx.fillRect(x2,canvas.height/2-H/2,w,H); if(H>50){spawnParticles(x1,canvas.height/2-H/2,H/255,C); spawnParticles(x2,canvas.height/2+H/2,H/255,C);}} },
         upwardBars: (c, o=0) => { const l=frequencyData.length, w=canvas.width/l; for(let i=0;i<l;i++){ const H=frequencyData[i]*settings.sensitivity, C=c||getDrawColor(i/l); ctx.fillStyle=C; const x=i*w+o; ctx.fillRect(x,canvas.height,w,-H); if(H>100)spawnParticles(x,canvas.height-H,H/255,C);}},
@@ -173,12 +179,109 @@ window.addEventListener('DOMContentLoaded', () => {
         rings: (c, o=0) => { const hX = canvas.width / 2 + o, hY = canvas.height / 2; const buckets = 5; const l = Math.floor(frequencyData.length / 2); for(let b=1; b<=buckets; b++) { ctx.beginPath(); const C = c || getDrawColor(b/buckets); settings.filledShapes ? ctx.fillStyle = C : ctx.strokeStyle = C; ctx.lineWidth = 3; const baseRadius = b * 80; for(let i=0; i<l; i++) { const H = frequencyData[Math.floor(i * (frequencyData.length / l))] * (settings.sensitivity/2); const deformation = (i % b === 0) ? H : H/2; const r = baseRadius + deformation; const a = (i/l)*2*Math.PI + (dynamicRotation * (b%2==0?1:-1)); const x = hX + Math.cos(a)*r, y = hY + Math.sin(a)*r; if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); } ctx.closePath(); settings.filledShapes ? ctx.globalAlpha = 0.2 : ctx.globalAlpha = 1; settings.filledShapes ? ctx.fill() : ctx.stroke(); ctx.globalAlpha = 1.0; } },
         floatingDust: (c, o=0) => { if(!window.dustArray) window.dustArray = Array.from({length: 150}, () => ({x: Math.random(), y: Math.random(), s: Math.random(), v: Math.random()*0.001 + 0.0005})); const l = frequencyData.length; const avg = getAverageVolume(frequencyData); const intensity = Math.min(1, avg / 140); window.dustArray.forEach((dust, i) => { const freqIdx = Math.floor((i / 150) * l); const H = frequencyData[freqIdx] * settings.sensitivity; dust.y -= (dust.v + (H / 20000) * (intensity + 0.1)); if(dust.y < 0) { dust.y = 1; dust.x = Math.random(); } const px = dust.x * canvas.width + o, py = dust.y * canvas.height; const radius = (dust.s * 5) + (H / 20); ctx.beginPath(); ctx.arc(px, py, Math.max(0.1, radius), 0, Math.PI*2); const C = c || getDrawColor(dust.y); ctx.fillStyle = C; ctx.globalAlpha = Math.min(1, H/100 + 0.2); ctx.fill(); }); ctx.globalAlpha = 1.0; },
         
-        // --- 5 MISSING VISUALIZERS RESTORED ---
+        // --- 5 NEW VISUALIZERS ---
         vortex: (c, o=0) => { const l = frequencyData.length; const cx = canvas.width / 2 + o, cy = canvas.height / 2; ctx.beginPath(); for(let i=0; i<l/2; i++) { const val = frequencyData[i] * settings.sensitivity; const angle = i * 0.1 + dynamicRotation; const r = i * 2 + val; const x = cx + Math.cos(angle) * r; const y = cy + Math.sin(angle) * r; if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); } ctx.lineWidth = 2 + (frequencyData[2]*settings.sensitivity/50); ctx.strokeStyle = c || getDrawColor(0.5); ctx.stroke(); },
         honeycomb: (c, o=0) => { const hexRadius = 20; const hexHeight = hexRadius * Math.sqrt(3); const cols = Math.ceil(canvas.width / (hexRadius * 1.5)) + 1; const rows = Math.ceil(canvas.height / hexHeight) + 1; for(let y=0; y<rows; y++) { for(let x=0; x<cols; x++) { const cx = x * hexRadius * 1.5 + o; const cy = y * hexHeight + (x%2===1 ? hexHeight/2 : 0); const idx = Math.floor(((x+y*cols)/(cols*rows)) * (frequencyData.length/2)); const val = frequencyData[idx] * settings.sensitivity; if (val > 50) { ctx.beginPath(); for(let i=0; i<6; i++) { const angle = i * Math.PI / 3; const hx = cx + Math.cos(angle) * (hexRadius - 2 + val/20); const hy = cy + Math.sin(angle) * (hexRadius - 2 + val/20); if(i===0) ctx.moveTo(hx,hy); else ctx.lineTo(hx,hy); } ctx.closePath(); const color = c || getDrawColor(val/255); settings.filledShapes ? (ctx.fillStyle=color, ctx.fill()) : (ctx.strokeStyle=color, ctx.lineWidth=2, ctx.stroke()); } } } },
         laser: (c, o=0) => { const l = Math.floor(frequencyData.length/4); const cy = canvas.height/2; ctx.lineWidth = 4; ctx.globalCompositeOperation = 'screen'; for(let i=1; i<4; i++) { ctx.beginPath(); ctx.moveTo(o, cy); const color = c || getDrawColor(i/4); ctx.strokeStyle = color; ctx.shadowBlur = 15; ctx.shadowColor = color; for(let j=1; j<l; j+=5) { const val = frequencyData[j] * settings.sensitivity; const x = o + (j/l)*canvas.width; const y = cy + (val * Math.sin(j + dynamicRotation*i) * (i%2===0?1:-1)); ctx.lineTo(x, y); } ctx.stroke(); } ctx.shadowBlur = 0; ctx.globalCompositeOperation = 'source-over'; },
         constellation: (c, o=0) => { if(!window.constellationNodes) window.constellationNodes = Array.from({length: 80}, () => ({x: Math.random()*canvas.width, y: Math.random()*canvas.height, vx: (Math.random()-0.5)*2, vy: (Math.random()-0.5)*2})); const avg = getAverageVolume(frequencyData); const color = c || getDrawColor(0.5); ctx.fillStyle = color; ctx.strokeStyle = color; for(let i=0; i<window.constellationNodes.length; i++) { let n1 = window.constellationNodes[i]; n1.x += n1.vx * (1 + avg/50); n1.y += n1.vy * (1 + avg/50); if(n1.x < 0 || n1.x > canvas.width) n1.vx *= -1; if(n1.y < 0 || n1.y > canvas.height) n1.vy *= -1; const val = frequencyData[i % frequencyData.length] * settings.sensitivity; const r = 2 + val/30; ctx.beginPath(); ctx.arc(n1.x + o, n1.y, r, 0, Math.PI*2); ctx.fill(); for(let j=i+1; j<window.constellationNodes.length; j++) { let n2 = window.constellationNodes[j]; const dist = Math.hypot(n1.x-n2.x, n1.y-n2.y); if(dist < 150 + val) { ctx.globalAlpha = 1 - (dist / (150+val)); ctx.lineWidth = 1 + val/100; ctx.beginPath(); ctx.moveTo(n1.x+o, n1.y); ctx.lineTo(n2.x+o, n2.y); ctx.stroke(); } } } ctx.globalAlpha = 1.0; },
-        ripples: (c, o=0) => { if(!window.ripplesArray) window.ripplesArray = []; const bass = frequencyData[2]; if(bass > 200 && Math.random() > 0.8) { window.ripplesArray.push({ x: Math.random()*canvas.width + o, y: Math.random()*canvas.height, r: 0, alpha: 1, color: c || getDrawColor(Math.random()) }); } for(let i=window.ripplesArray.length-1; i>=0; i--) { let r = window.ripplesArray[i]; r.r += 5 + (bass/50); r.alpha -= 0.02; if(r.alpha <= 0) { window.ripplesArray.splice(i, 1); } else { ctx.beginPath(); ctx.arc(r.x, r.y, r.r, 0, Math.PI*2); ctx.strokeStyle = r.color; ctx.globalAlpha = r.alpha; ctx.lineWidth = 3; ctx.stroke(); } } ctx.globalAlpha = 1.0; }
+        
+        // --- REPLACED RIPPLES WITH SHOCKWAVE ---
+        shockwave: (c, o=0) => {
+            if(!window.shockwaves) window.shockwaves = [];
+            const cx = canvas.width / 2 + o, cy = canvas.height / 2;
+            const bass = frequencyData[5]; 
+            // Add new wave on bass hit
+            if (bass > 240 && (window.shockwaves.length === 0 || window.shockwaves[window.shockwaves.length-1].age > 10)) {
+                window.shockwaves.push({ r: 50, alpha: 1.0, color: c || getDrawColor(Math.random()), age: 0 });
+            }
+            // Draw waves
+            for (let i = window.shockwaves.length - 1; i >= 0; i--) {
+                let w = window.shockwaves[i];
+                w.r += 15 + (bass/20); 
+                w.alpha -= 0.02; 
+                w.age++;
+                if (w.alpha <= 0) {
+                    window.shockwaves.splice(i, 1);
+                } else {
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, w.r, 0, Math.PI * 2);
+                    ctx.lineWidth = 10;
+                    ctx.strokeStyle = w.color;
+                    ctx.globalAlpha = w.alpha;
+                    ctx.stroke();
+                }
+            }
+            ctx.globalAlpha = 1.0;
+        },
+
+        // --- NEW VISUALIZERS ---
+        spiral: (c, o=0) => {
+            const cx = canvas.width / 2 + o, cy = canvas.height / 2;
+            const l = frequencyData.length / 2;
+            for (let i = 0; i < l; i+=3) {
+                const val = frequencyData[i];
+                const angle = 0.1 * i + dynamicRotation;
+                const r = 5 + (0.5 * i);
+                const x = cx + Math.cos(angle) * r;
+                const y = cy + Math.sin(angle) * r;
+                const size = (val * settings.sensitivity) / 30;
+                if (size > 1) {
+                    ctx.beginPath();
+                    ctx.arc(x, y, size, 0, Math.PI * 2);
+                    ctx.fillStyle = c || getDrawColor(i/l);
+                    ctx.fill();
+                }
+            }
+        },
+        globe: (c, o=0) => {
+            const cx = canvas.width / 2 + o, cy = canvas.height / 2;
+            const r = 200;
+            const l = 50; 
+            for (let i = 0; i < l; i++) {
+                const lat = Math.acos(1 - 2 * (i + 0.5) / l);
+                const lon = Math.PI * 3 * (i + 0.5) + dynamicRotation;
+                const val = frequencyData[i*2] * settings.sensitivity / 5;
+                const x3 = (r + val) * Math.sin(lat) * Math.cos(lon);
+                const y3 = (r + val) * Math.sin(lat) * Math.sin(lon);
+                const z3 = (r + val) * Math.cos(lat);
+                const scale = 400 / (400 + z3); 
+                const x2 = cx + x3 * scale;
+                const y2 = cy + y3 * scale;
+                const size = 3 * scale;
+                ctx.beginPath();
+                ctx.arc(x2, y2, size, 0, Math.PI * 2);
+                ctx.fillStyle = c || getDrawColor(i/l);
+                ctx.globalAlpha = scale > 0.5 ? 1 : 0.3; 
+                ctx.fill();
+            }
+            ctx.globalAlpha = 1.0;
+        },
+        barcode: (c, o=0) => {
+             const l = 64; 
+             const barW = canvas.width / l;
+             for (let i = 0; i < l; i++) {
+                 const idx = Math.floor((i/l) * frequencyData.length);
+                 const val = frequencyData[idx];
+                 const h = canvas.height; 
+                 const opacity = Math.pow(val / 255, 3) * settings.sensitivity; 
+                 ctx.fillStyle = c || getDrawColor(i/l);
+                 ctx.globalAlpha = Math.min(1, opacity);
+                 ctx.fillRect(i * barW + o, 0, barW - 2, h);
+             }
+             ctx.globalAlpha = 1.0;
+        },
+        eclipse: (c, o=0) => {
+            const cx = canvas.width / 2 + o, cy = canvas.height / 2;
+            const radius = 150;
+            drawFuncs.sunburst(c, o);
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+            ctx.fillStyle = "#000000";
+            ctx.fill();
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = c || getDrawColor(0.5);
+            ctx.stroke();
+        }
     };
     function drawPolygon(x,y,s,r,rot,C){ctx.beginPath(); for(let i=0;i<s;i++){ctx.lineTo(x+r*Math.cos(rot+i*2*Math.PI/s),y+r*Math.sin(rot+i*2*Math.PI/s));} ctx.closePath(); settings.filledShapes?ctx.fill():ctx.stroke();}
     function drawProfileImage() { if (!profileImage || !profileImage.complete) return; const centerX = canvas.width / 2, centerY = canvas.height / 2; const size = 120; ctx.save(); ctx.beginPath(); ctx.arc(centerX, centerY, size / 2, 0, Math.PI * 2); ctx.clip(); ctx.drawImage(profileImage, centerX - size / 2, centerY - size / 2, size, size); ctx.restore(); }
@@ -252,24 +355,6 @@ window.addEventListener('DOMContentLoaded', () => {
     function setProfileImage(path) { if (path) { profileImage = new Image(); profileImage.src = path; settings.profileImagePath = path; pfpPreview.src = path; pfpPreview.classList.remove('hidden'); } else { profileImage = null; settings.profileImagePath = null; pfpPreview.src = '#'; pfpPreview.classList.add('hidden'); } saveSettings(); }
     
     // --- EVENT LISTENERS ---
-    setupCanvas(); loadSettings(); window.addEventListener('resize', setupCanvas);
-    
-    // STARTUP BUTTON LISTENER
-    acceptWarningButton.addEventListener('click', async () => {
-        epilepsyWarning.style.opacity = '0';
-        setTimeout(() => { epilepsyWarning.style.display = 'none'; }, 500);
-        uiContainer.classList.add('visible');
-        await startOrUpdateAudioSource();
-        await populateMicrophoneList();
-        updateAudioSourceUI();
-        handleAccentCheck();
-        updateGradientUI();
-        handleVisualizerOptionsVisibility();
-        handleRainbowModeVisibility();
-        
-        // FIX: This is the missing line that actually starts the visualizer loop!
-        draw(); 
-    }, { once: true });
     
     visBtns.forEach(btn => {
         btn.addEventListener('click', (e) => {
@@ -312,6 +397,6 @@ window.addEventListener('DOMContentLoaded', () => {
     particleAmountSlider.addEventListener('input', (e) => { settings.particleAmount = parseInt(e.target.value); saveSettings(); });
     particleGravitySlider.addEventListener('input', (e) => { settings.particleGravity = parseInt(e.target.value); saveSettings(); });
     particleLifespanSlider.addEventListener('input', (e) => { settings.particleLifespan = parseInt(e.target.value); saveSettings(); });
-
-    draw(); // Start the visualizer loop
+    
+    draw();
 });
