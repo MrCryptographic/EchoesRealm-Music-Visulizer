@@ -36,42 +36,8 @@
             
             <div class="setting-group-title">Visualizer Type</div>
             
-            <!-- Hidden the redundant dropdown, keeping it for logical mapping -->
             <select id="visualizerSelect" style="display: none;">
                 <option value="centerBars">Center Bars</option>
-                <option value="upwardBars">Upward Bars</option>
-                <option value="dualSidedBars">Dual-Sided Bars</option>
-                <option value="floorAndCeiling">Floor & Ceiling</option>
-                <option value="bars3D">3D Bars</option>
-                <option value="circle">Circular Lines</option>
-                <option value="sunburst">Sunburst</option>
-                <option value="spokes">Spokes</option>
-                <option value="blob">Blob</option>
-                <option value="polygons">Polygons</option>
-                <option value="nestedPolygons">Nested Polygons</option>
-                <option value="kaleidoscope">Kaleidoscope</option>
-                <option value="tunnel">Tunnel</option>
-                <option value="hyperspace">Hyperspace</option>
-                <option value="wireframeSphere">Wireframe Sphere</option>
-                <option value="rings">Rings</option>
-                <option value="starfield">Starfield</option>
-                <option value="floatingDust">Floating Dust</option>
-                <option value="shatter">Shatter</option>
-                <option value="flower">Flower</option>
-                <option value="matrix">Matrix Rain</option>
-                <option value="helix">DNA Helix</option>
-                <option value="pixelGrid">Pixel Grid</option>
-                <option value="radar">Radar</option>
-                <option value="waves">Waves</option>
-                <option value="frequencyWave">Frequency Wave</option>
-                <option value="heartbeat">Heartbeat</option>
-                <option value="circularWaveform">Circ. Waveform</option>
-                <option value="waveform">Waveform</option>
-                <option value="vortex">Vortex</option>
-                <option value="honeycomb">Honeycomb</option>
-                <option value="laser">Laser Show</option>
-                <option value="constellation">Constellation</option>
-                <option value="ripples">Ripples</option>
             </select>
 
             <div id="visualizerList" class="visualizer-grid">
@@ -80,6 +46,7 @@
                 <button class="vis-btn" data-vis="dualSidedBars">Dual-Sided Bars</button>
                 <button class="vis-btn" data-vis="floorAndCeiling">Floor & Ceiling</button>
                 <button class="vis-btn" data-vis="bars3D">3D Bars</button>
+                <button class="vis-btn" data-vis="cube">3D Cube</button> <!-- NEW -->
                 <button class="vis-btn" data-vis="circle">Circular Lines</button>
                 <button class="vis-btn" data-vis="sunburst">Sunburst</button>
                 <button class="vis-btn" data-vis="spokes">Spokes</button>
@@ -90,6 +57,7 @@
                 <button class="vis-btn" data-vis="tunnel">Tunnel</button>
                 <button class="vis-btn" data-vis="hyperspace">Hyperspace</button>
                 <button class="vis-btn" data-vis="wireframeSphere">Wire Globe</button>
+                <button class="vis-btn" data-vis="blackHole">Black Hole</button> <!-- NEW -->
                 <button class="vis-btn" data-vis="rings">Rings</button>
                 <button class="vis-btn" data-vis="starfield">Starfield</button>
                 <button class="vis-btn" data-vis="floatingDust">Floating Dust</button>
@@ -104,12 +72,11 @@
                 <button class="vis-btn" data-vis="heartbeat">Heartbeat</button>
                 <button class="vis-btn" data-vis="circularWaveform">Circ. Wave</button>
                 <button class="vis-btn" data-vis="waveform">Waveform</button>
-                <!-- 5 NEW BUTTONS -->
                 <button class="vis-btn" data-vis="vortex">Vortex</button>
                 <button class="vis-btn" data-vis="honeycomb">Honeycomb</button>
                 <button class="vis-btn" data-vis="laser">Laser Show</button>
+                <button class="vis-btn" data-vis="lightning">Lightning</button> <!-- NEW -->
                 <button class="vis-btn" data-vis="constellation">Constellation</button>
-                <button class="vis-btn" data-vis="ripples">Ripples</button>
             </div>
             
             <fieldset id="visualizerOptionsFieldset" class="hidden">
