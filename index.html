@@ -16,7 +16,6 @@
 
     <canvas id="visualizerCanvas"></canvas>
     
-    <div id="metadataDisplay" class="hidden"><p id="metaTitle"></p><p id="metaArtist"></p></div>
     <div id="silentMessage" class="hidden"></div>
     
     <div id="uiContainer">
@@ -31,6 +30,9 @@
     <div id="settingsPanel" class="sidebar">
         <div class="sidebar-header"><h2>Settings</h2><button id="closeButton">&times;</button></div>
         <div class="sidebar-content">
+            
+            <div class="setting-row"><label for="showHUDCheckbox">Show Info HUD</label><input type="checkbox" id="showHUDCheckbox"></div>
+            
             <div class="setting-row"><label for="audioSourceSelect">Audio Source</label><select id="audioSourceSelect"><option value="system">System Audio</option><option value="microphone">Microphone</option></select></div>
             <div id="microphoneSelectRow" class="setting-row hidden"><label for="microphoneSelect">Microphone</label><select id="microphoneSelect"></select></div>
             
@@ -46,7 +48,6 @@
                 <button class="vis-btn" data-vis="dualSidedBars">Dual-Sided Bars</button>
                 <button class="vis-btn" data-vis="floorAndCeiling">Floor & Ceiling</button>
                 <button class="vis-btn" data-vis="bars3D">3D Bars</button>
-                <button class="vis-btn" data-vis="cube">3D Cube</button> <!-- NEW -->
                 <button class="vis-btn" data-vis="circle">Circular Lines</button>
                 <button class="vis-btn" data-vis="sunburst">Sunburst</button>
                 <button class="vis-btn" data-vis="spokes">Spokes</button>
@@ -57,7 +58,6 @@
                 <button class="vis-btn" data-vis="tunnel">Tunnel</button>
                 <button class="vis-btn" data-vis="hyperspace">Hyperspace</button>
                 <button class="vis-btn" data-vis="wireframeSphere">Wire Globe</button>
-                <button class="vis-btn" data-vis="blackHole">Black Hole</button> <!-- NEW -->
                 <button class="vis-btn" data-vis="rings">Rings</button>
                 <button class="vis-btn" data-vis="starfield">Starfield</button>
                 <button class="vis-btn" data-vis="floatingDust">Floating Dust</button>
@@ -69,14 +69,10 @@
                 <button class="vis-btn" data-vis="radar">Radar</button>
                 <button class="vis-btn" data-vis="waves">Waves</button>
                 <button class="vis-btn" data-vis="frequencyWave">Frequency Wave</button>
-                <button class="vis-btn" data-vis="heartbeat">Heartbeat</button>
                 <button class="vis-btn" data-vis="circularWaveform">Circ. Wave</button>
                 <button class="vis-btn" data-vis="waveform">Waveform</button>
-                <button class="vis-btn" data-vis="vortex">Vortex</button>
-                <button class="vis-btn" data-vis="honeycomb">Honeycomb</button>
-                <button class="vis-btn" data-vis="laser">Laser Show</button>
-                <button class="vis-btn" data-vis="lightning">Lightning</button> <!-- NEW -->
-                <button class="vis-btn" data-vis="constellation">Constellation</button>
+                <button class="vis-btn" data-vis="orbit">Orbit</button>
+                <button class="vis-btn" data-vis="ransom">Ransom Popups</button>
             </div>
             
             <fieldset id="visualizerOptionsFieldset" class="hidden">
@@ -91,9 +87,9 @@
             <div class="setting-row"><label for="dynamicCheckbox">Enable Dynamic Effects</label><input type="checkbox" id="dynamicCheckbox"></div>
             <fieldset id="dynamicEffectsFieldset"><legend>Effects Engine</legend>
                 <div class="setting-row"><label for="shakeSlider">Shake Intensity</label><input type="range" id="shakeSlider" min="0" max="50" step="1"></div>
-                <div class="setting-row"><label for="aberrationSlider">Color Aberration</label><input type="range" id="aberrationSlider" min="0" max="20" step="1"></div>
-                <div class="setting-row"><label for="glowSlider">Glow Intensity</label><input type="range" id="glowSlider" min="0" max="50" step="1"></div>
-                <div class="setting-row"><label for="glowColor">Glow Color</label><input type="color" id="glowColor"></div>
+                <div class="setting-row"><label for="zoomSlider">Camera Zoom (Beat)</label><input type="range" id="zoomSlider" min="0" max="30" step="1"></div>
+                <div class="setting-row"><label for="aberrationSlider">Color Aberration</label><input type="range" id="aberrationSlider" min="0" max="30" step="1"></div>
+                <div class="setting-row"><label for="flashSlider">Peak Flash</label><input type="range" id="flashSlider" min="0" max="50" step="1"></div>
                 <div class="setting-row"><label for="scanlineSlider">Scan Line Intensity</label><input type="range" id="scanlineSlider" min="0" max="50" step="1"></div>
             </fieldset>
             <hr>
@@ -115,9 +111,18 @@
             <div class="setting-row"><label for="backgroundColor">Background</label><input type="color" id="backgroundColor"></div>
             
             <div class="setting-row"><label for="sensitivitySlider">Sensitivity</label><input type="range" id="sensitivitySlider" min="1" max="5" step="0.1"></div>
-            <div class="setting-row"><label for="smoothingSlider">Responsiveness (Smoothing)</label><input type="range" id="smoothingSlider" min="0" max="95" value="80" step="1"></div>
+            <div class="setting-row"><label for="smoothingSlider">Responsiveness</label><input type="range" id="smoothingSlider" min="0" max="95" value="80" step="1"></div>
             <div class="setting-row"><label for="trailSlider">Motion Blur</label><input type="range" id="trailSlider" min="0" max="50" step="1"></div>
-            <button id="closeButton">&times;</button>
+            
+            <hr>
+            
+            <!-- Hidden Audio Player to process local file metadata for the HUD -->
+            <audio id="audioPlayer" style="display: none;"></audio>
+            <div class="setting-row"><label>Test Local Audio File</label></div>
+            <button id="selectAudioButton" class="action-button">Select Audio for HUD</button>
+            <p id="audioFileName" style="font-size: 0.8em; color: #888; text-align: center;">No file selected.</p>
+
+            <button id="resetSettingsButton" class="action-button danger-btn" style="width: 100%; margin-top: 20px;">Reset to Defaults</button>
         </div>
     </div>
     <script src="renderer.js"></script>

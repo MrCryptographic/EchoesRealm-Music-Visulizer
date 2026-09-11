@@ -1,13 +1,12 @@
 window.addEventListener('DOMContentLoaded', () => {
     // --- DOM ELEMENT REFERENCES ---
-    const canvas = document.getElementById('visualizerCanvas'), ctx = canvas.getContext('2d'), epilepsyWarning = document.getElementById('epilepsyWarning'), acceptWarningButton = document.getElementById('acceptWarningButton'), uiContainer = document.getElementById('uiContainer'), settingsButton = document.getElementById('settingsButton'), settingsPanel = document.getElementById('settingsPanel'), closeSettingsButton = document.getElementById('closeButton'), visualizerOptionsFieldset = document.getElementById('visualizerOptionsFieldset'), fillCheckbox = document.getElementById('fillCheckbox'), directionSelect = document.getElementById('directionSelect'), rotationSlider = document.getElementById('rotationSlider'), selectPfpButton = document.getElementById('selectPfpButton'), clearPfpButton = document.getElementById('clearPfpButton'), pfpPreview = document.getElementById('pfpPreview'), dynamicEffectsFieldset = document.getElementById('dynamicEffectsFieldset'), visualizerSelect = document.getElementById('visualizerSelect'), dynamicCheckbox = document.getElementById('dynamicCheckbox'), shakeSlider = document.getElementById('shakeSlider'), aberrationSlider = document.getElementById('aberrationSlider'), glowSlider = document.getElementById('glowSlider'), glowColor = document.getElementById('glowColor'), scanlineSlider = document.getElementById('scanlineSlider'), accentColorCheckbox = document.getElementById('accentColorCheckbox'), gradientControls = document.getElementById('gradientControls'), gradientPickerContainer = document.getElementById('gradientPickerContainer'), addColorButton = document.getElementById('addColorButton'), extractColorsButton = document.getElementById('extractColorsButton'), backgroundColorInput = document.getElementById('backgroundColor'), gradientBgCheckbox = document.getElementById('gradientBgCheckbox'), sensitivitySlider = document.getElementById('sensitivitySlider'), smoothingSlider = document.getElementById('smoothingSlider'), trailSlider = document.getElementById('trailSlider'), metadataDisplay = document.getElementById('metadataDisplay'), metaTitle = document.getElementById('metaTitle'), metaArtist = document.getElementById('metaArtist'), silentMessage = document.getElementById('silentMessage'), audioSourceSelect = document.getElementById('audioSourceSelect'), microphoneSelectRow = document.getElementById('microphoneSelectRow'), microphoneSelect = document.getElementById('microphoneSelect'), rainbowCheckbox = document.getElementById('rainbowCheckbox'), rainbowControls = document.getElementById('rainbowControls'), rainbowSpeedSlider = document.getElementById('rainbowSpeedSlider');
+    const canvas = document.getElementById('visualizerCanvas'), ctx = canvas.getContext('2d'), epilepsyWarning = document.getElementById('epilepsyWarning'), acceptWarningButton = document.getElementById('acceptWarningButton'), uiContainer = document.getElementById('uiContainer'), settingsButton = document.getElementById('settingsButton'), settingsPanel = document.getElementById('settingsPanel'), closeSettingsButton = document.getElementById('closeButton'), visualizerOptionsFieldset = document.getElementById('visualizerOptionsFieldset'), fillCheckbox = document.getElementById('fillCheckbox'), directionSelect = document.getElementById('directionSelect'), rotationSlider = document.getElementById('rotationSlider'), selectPfpButton = document.getElementById('selectPfpButton'), clearPfpButton = document.getElementById('clearPfpButton'), pfpPreview = document.getElementById('pfpPreview'), dynamicEffectsFieldset = document.getElementById('dynamicEffectsFieldset'), visualizerSelect = document.getElementById('visualizerSelect'), dynamicCheckbox = document.getElementById('dynamicCheckbox'), shakeSlider = document.getElementById('shakeSlider'), aberrationSlider = document.getElementById('aberrationSlider'), glowSlider = document.getElementById('glowSlider'), glowColor = document.getElementById('glowColor'), scanlineSlider = document.getElementById('scanlineSlider'), accentColorCheckbox = document.getElementById('accentColorCheckbox'), gradientControls = document.getElementById('gradientControls'), gradientPickerContainer = document.getElementById('gradientPickerContainer'), addColorButton = document.getElementById('addColorButton'), extractColorsButton = document.getElementById('extractColorsButton'), backgroundColorInput = document.getElementById('backgroundColor'), gradientBgCheckbox = document.getElementById('gradientBgCheckbox'), sensitivitySlider = document.getElementById('sensitivitySlider'), smoothingSlider = document.getElementById('smoothingSlider'), trailSlider = document.getElementById('trailSlider'), metadataDisplay = document.getElementById('metadataDisplay'), metaTitle = document.getElementById('metaTitle'), metaArtist = document.getElementById('metaArtist'), silentMessage = document.getElementById('silentMessage'), audioSourceSelect = document.getElementById('audioSourceSelect'), microphoneSelectRow = document.getElementById('microphoneSelectRow'), microphoneSelect = document.getElementById('microphoneSelect'), rainbowCheckbox = document.getElementById('rainbowCheckbox'), rainbowControls = document.getElementById('rainbowControls'), rainbowSpeedSlider = document.getElementById('rainbowSpeedSlider'), resetSettingsButton = document.getElementById('resetSettingsButton');
     const visBtns = document.querySelectorAll('.vis-btn');
 
     // --- GLOBAL STATE ---
     let audioContext, analyser, frequencyData, timeDomainData;
-    let silenceCounter = 0, silentMessageInterval = null, dynamicRotation = 0, rainbowHueOffset = 0;
-    let profileImage = null; 
-    let matrixDrops =[]; 
+    let silenceCounter = 0, silentMessageInterval = null, dynamicRotation = 0, rainbowHueOffset = 0, idleTimer = null;
+    let profileImage = null; let matrixDrops = []; 
 
     const defaultSettings = { 
         visualizerType: 'centerBars', dynamicEffects: false, shake: 15, aberration: 5, glow: 15, glowColor: '#ffffff', scanlines: 20, 
@@ -32,7 +31,6 @@ window.addEventListener('DOMContentLoaded', () => {
     acceptWarningButton.addEventListener('click', async () => {
         epilepsyWarning.style.opacity = '0';
         setTimeout(() => { epilepsyWarning.style.display = 'none'; }, 500);
-        uiContainer.classList.add('visible');
         
         await startOrUpdateAudioSource();
         await populateMicrophoneList();
@@ -43,9 +41,32 @@ window.addEventListener('DOMContentLoaded', () => {
         handleRainbowModeVisibility();
         
         if (audioContext && audioContext.state === 'suspended') await audioContext.resume();
+        resetIdleTimer();
         draw(); 
     }, { once: true });
 
+    // QOL: Double Click Fullscreen
+    document.addEventListener('dblclick', (e) => {
+        if (e.target.closest('#settingsPanel') || e.target.closest('#uiContainer')) return;
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(err => console.log(err));
+        } else {
+            document.exitFullscreen();
+        }
+    });
+
+    // QOL: Hide UI on Idle
+    function resetIdleTimer() {
+        uiContainer.classList.remove('faded');
+        clearTimeout(idleTimer);
+        idleTimer = setTimeout(() => {
+            if(!settingsPanel.classList.contains('open')) {
+                uiContainer.classList.add('faded');
+            }
+        }, 3000);
+    }
+    window.addEventListener('mousemove', resetIdleTimer);
+    window.addEventListener('click', resetIdleTimer);
 
     // --- CORE DRAWING LOOP ---
     function draw() {
@@ -66,19 +87,12 @@ window.addEventListener('DOMContentLoaded', () => {
         if (settings.gradientBackground && settings.gradientColors.length >= 2 && !settings.rainbowMode) {
             const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
             settings.gradientColors.forEach((color, i) => grad.addColorStop(i / (settings.gradientColors.length - 1), color));
-            ctx.fillStyle = grad;
-            ctx.globalAlpha = effectiveTrailAmount;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.globalAlpha = 1.0;
+            ctx.fillStyle = grad; ctx.globalAlpha = effectiveTrailAmount; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.globalAlpha = 1.0;
         } else if (settings.gradientBackground && settings.rainbowMode) {
              const h = rainbowHueOffset % 360;
-             ctx.fillStyle = `hsl(${h}, 50%, 10%)`;
-             ctx.globalAlpha = effectiveTrailAmount;
-             ctx.fillRect(0, 0, canvas.width, canvas.height);
-             ctx.globalAlpha = 1.0;
+             ctx.fillStyle = `hsl(${h}, 50%, 10%)`; ctx.globalAlpha = effectiveTrailAmount; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.globalAlpha = 1.0;
         } else {
-            ctx.fillStyle = `rgba(${backgroundRgb.r}, ${backgroundRgb.g}, ${backgroundRgb.b}, ${effectiveTrailAmount})`;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = `rgba(${backgroundRgb.r}, ${backgroundRgb.g}, ${backgroundRgb.b}, ${effectiveTrailAmount})`; ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
 
         dynamicRotation += intensity * (settings.rotationSpeed / 100);
@@ -104,9 +118,7 @@ window.addEventListener('DOMContentLoaded', () => {
             if(drawFuncs[settings.visualizerType]) drawFuncs[settings.visualizerType](`rgba(0,0,255,0.7)`, aberrationAmount); 
             ctx.globalCompositeOperation = 'source-over'; 
         } else { 
-            if (drawFuncs[settings.visualizerType]) {
-                drawFuncs[settings.visualizerType](); 
-            }
+            if (drawFuncs[settings.visualizerType]) drawFuncs[settings.visualizerType](); 
         }
         
         ctx.shadowBlur = 0; 
@@ -137,98 +149,128 @@ window.addEventListener('DOMContentLoaded', () => {
         blob: (c, o=0) => { const l=Math.floor(frequencyData.length/2), hX=canvas.width/2+o, hY=canvas.height/2, C=c||getDrawColor(0.5); settings.filledShapes?ctx.fillStyle=C:ctx.strokeStyle=C; ctx.lineWidth=3; ctx.beginPath(); for(let i=1;i<l;i++){ const H=frequencyData[i]*(settings.sensitivity/1.5), r=150+H, a=(i/l)*2*Math.PI, x=hX+Math.cos(a)*r, y=hY+Math.sin(a)*r; i===1?ctx.moveTo(x,y):ctx.lineTo(x,y); } ctx.closePath(); settings.filledShapes?ctx.fill():ctx.stroke();},
         polygons: (c, o=0) => { const hX=canvas.width/2+o, hY=canvas.height/2; const bass=frequencyData[2]*(settings.sensitivity/2), mids=frequencyData[150]*(settings.sensitivity/2), highs=frequencyData[500]*(settings.sensitivity/2); const C=c||getDrawColor(0.5); settings.filledShapes?ctx.fillStyle=C:ctx.strokeStyle=C; ctx.lineWidth=2; drawPolygon(hX,hY,3,100+bass,dynamicRotation,C); drawPolygon(hX,hY,4,150+mids,-dynamicRotation,C); drawPolygon(hX,hY,5,200+highs,dynamicRotation/2,C); },
         nestedPolygons: (c, o=0) => { const hX=canvas.width/2+o, hY=canvas.height/2; const bass=frequencyData[4]*settings.sensitivity; for (let i=3; i>0; i--) { const C = c || getDrawColor(i/3); ctx.strokeStyle=C; ctx.lineWidth=2; drawPolygon(hX,hY,3,50*i + bass/i, dynamicRotation * (i%2===0?-1:1) * (1/i)); }},
+        kaleidoscope: (c, o=0) => { const l = Math.floor(frequencyData.length / 4); const cx = canvas.width / 2 + o, cy = canvas.height / 2; const slices = 12; const angleStep = (Math.PI * 2) / slices; for (let s = 0; s < slices; s++) { ctx.save(); ctx.translate(cx, cy); ctx.rotate(s * angleStep + dynamicRotation); if (s % 2 !== 0) ctx.scale(1, -1); ctx.beginPath(); ctx.moveTo(0, 0); for (let i = 0; i < l; i++) { const H = frequencyData[i] * (settings.sensitivity / 1.5); const r = (i / l) * (Math.min(canvas.width, canvas.height) / 2) + H; const theta = (i / l) * (angleStep); const x = Math.cos(theta) * r; const y = Math.sin(theta) * r; ctx.lineTo(x, y); } ctx.closePath(); const C = c || getDrawColor(s / slices); settings.filledShapes ? ctx.fillStyle = C : ctx.strokeStyle = C; ctx.lineWidth = 2; settings.filledShapes ? ctx.fill() : ctx.stroke(); ctx.restore(); } },
+        tunnel: (c, o=0) => { const hX = canvas.width / 2 + o, hY = canvas.height / 2; const bass = frequencyData[2] * (settings.sensitivity / 2); ctx.lineWidth = 2 + bass/20; const numRings = 15; for(let i=1; i<=numRings; i++) { const phase = ((i + dynamicRotation/2) % numRings) / numRings; const r = phase * Math.max(canvas.width, canvas.height); const C = c || getDrawColor(phase); ctx.globalAlpha = Math.max(0, 1 - phase); settings.filledShapes ? ctx.fillStyle = C : ctx.strokeStyle = C; const currentRot = dynamicRotation*(i%2==0?1:-1); if(settings.circularDirection === 'inward') { drawPolygon(hX, hY, 6, Math.max(0.1, Math.max(canvas.width, canvas.height) - r), currentRot, C); } else { drawPolygon(hX, hY, 6, Math.max(0.1, r), currentRot, C); } } ctx.globalAlpha = 1.0; },
+        hyperspace: (c, o=0) => { if(!window.stars) window.stars = Array.from({length: 400}, () => ({x: (Math.random()-0.5)*2000, y: (Math.random()-0.5)*2000, z: Math.random()*2000})); const cx = canvas.width/2 + o, cy = canvas.height/2; const avg = getAverageVolume(frequencyData); const speed = 2 + (avg/255)*30 * settings.sensitivity; ctx.globalCompositeOperation = 'screen'; window.stars.forEach((star, i) => { star.z -= speed; if(star.z <= 0) { star.z = 2000; star.x = (Math.random()-0.5)*2000; star.y = (Math.random()-0.5)*2000; } const px = cx + (star.x / star.z) * 500, py = cy + (star.y / star.z) * 500; if (px >= 0 && px <= canvas.width && py >= 0 && py <= canvas.height) { const size = Math.max(0.1, (2000 - star.z) / 400); const C = c || getDrawColor(i / 400); ctx.fillStyle = C; ctx.beginPath(); ctx.arc(px, py, size, 0, Math.PI*2); ctx.fill(); if(avg > 100 && i % 10 === 0) { ctx.strokeStyle = C; ctx.globalAlpha = (avg-100)/155 * 0.5; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(px, py); ctx.stroke(); ctx.globalAlpha = 1.0; } } }); ctx.globalCompositeOperation = 'source-over'; },
+        wireframeSphere: (c, o=0) => { const cx = canvas.width/2 + o, cy = canvas.height/2; const rBase = Math.min(canvas.width, canvas.height) / 4; const bands = 12, segments = 24, l = frequencyData.length; ctx.lineWidth = 1.5; for(let i=0; i<=bands; i++) { const theta = (i / bands) * Math.PI; ctx.beginPath(); for(let j=0; j<=segments; j++) { const phi = (j / segments) * Math.PI * 2 + dynamicRotation; const freqIdx = Math.floor(((i*segments + j) / (bands*segments)) * (l/2)); const H = frequencyData[freqIdx] * (settings.sensitivity/2); const r = rBase + H; const x3d = r * Math.sin(theta) * Math.cos(phi), y3d = r * Math.cos(theta), z3d = r * Math.sin(theta) * Math.sin(phi); const fov = 500, z = z3d + fov, x = cx + (x3d * fov) / z, y = cy + (y3d * fov) / z; if (j===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); } ctx.closePath(); const C = c || getDrawColor(i/bands); settings.filledShapes ? ctx.fillStyle = C : ctx.strokeStyle = C; settings.filledShapes ? (ctx.globalAlpha=0.1, ctx.fill(), ctx.globalAlpha=1.0) : null; ctx.stroke(); } },
+        rings: (c, o=0) => { const hX = canvas.width / 2 + o, hY = canvas.height / 2; const buckets = 5; const l = Math.floor(frequencyData.length / 2); for(let b=1; b<=buckets; b++) { ctx.beginPath(); const C = c || getDrawColor(b/buckets); settings.filledShapes ? ctx.fillStyle = C : ctx.strokeStyle = C; ctx.lineWidth = 3; const baseRadius = b * 80; for(let i=0; i<l; i++) { const H = frequencyData[Math.floor(i * (frequencyData.length / l))] * (settings.sensitivity/2); const deformation = (i % b === 0) ? H : H/2; const r = baseRadius + deformation; const a = (i/l)*2*Math.PI + (dynamicRotation * (b%2==0?1:-1)); const x = hX + Math.cos(a)*r, y = hY + Math.sin(a)*r; if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); } ctx.closePath(); settings.filledShapes ? ctx.globalAlpha = 0.2 : ctx.globalAlpha = 1; settings.filledShapes ? ctx.fill() : ctx.stroke(); ctx.globalAlpha = 1.0; } },
         starfield: (c, o=0) => { const l=Math.floor(frequencyData.length/2); for(let i=1; i<l; i+=5) { const H=frequencyData[i]*(settings.sensitivity/2); if(H < 10) continue; const x = (i/l) * canvas.width + o; const y = (i%100/100) * canvas.height; const C=c||getDrawColor(i/l); ctx.strokeStyle=C; drawPolygon(x,y,4,H/10,dynamicRotation,C); }},
         shatter: (c, o=0) => { const l=frequencyData.length, hX=canvas.width/2+o, hY=canvas.height/2; const avg=getAverageVolume(frequencyData)*(settings.sensitivity/1.5); const C=c||getDrawColor(0.5); settings.filledShapes?ctx.fillStyle=C:ctx.strokeStyle=C; ctx.lineWidth=3; ctx.beginPath(); for(let i=1;i<l;i+=2){ const H=frequencyData[i]*(settings.sensitivity/1.5); const a=(i/l)*2*Math.PI; const r=100 + (H * (Math.random() * 1.5)); const x=hX+Math.cos(a)*r, y=hY+Math.sin(a)*r; i===1?ctx.moveTo(x,y):ctx.lineTo(x,y); } ctx.closePath(); settings.filledShapes?ctx.fill():ctx.stroke(); },
         flower: (c,o=0) => { const l=Math.floor(frequencyData.length/2), hX=canvas.width/2+o, hY=canvas.height/2; const C=c||getDrawColor(0.5); settings.filledShapes?ctx.fillStyle=C:ctx.strokeStyle=C; ctx.lineWidth=3; ctx.beginPath(); const petals=6; for(let i=1;i<l;i++){ const H=frequencyData[i]*(settings.sensitivity/2); const r=150+H + Math.sin(i/l*2*Math.PI*petals)*50; const a=(i/l)*2*Math.PI; const x=hX+Math.cos(a)*r; const y=hY+Math.sin(a)*r; i===1?ctx.moveTo(x,y):ctx.lineTo(x,y); } ctx.closePath(); settings.filledShapes?ctx.fill():ctx.stroke();},
-        kaleidoscope: (c, o=0) => { const l = Math.floor(frequencyData.length / 4); const cx = canvas.width / 2 + o, cy = canvas.height / 2; const slices = 12; const angleStep = (Math.PI * 2) / slices; for (let s = 0; s < slices; s++) { ctx.save(); ctx.translate(cx, cy); ctx.rotate(s * angleStep + dynamicRotation); if (s % 2 !== 0) ctx.scale(1, -1); ctx.beginPath(); ctx.moveTo(0, 0); for (let i = 0; i < l; i++) { const H = frequencyData[i] * (settings.sensitivity / 1.5); const r = (i / l) * (Math.min(canvas.width, canvas.height) / 2) + H; const theta = (i / l) * (angleStep); const x = Math.cos(theta) * r; const y = Math.sin(theta) * r; ctx.lineTo(x, y); } ctx.closePath(); const C = c || getDrawColor(s / slices); settings.filledShapes ? ctx.fillStyle = C : ctx.strokeStyle = C; ctx.lineWidth = 2; settings.filledShapes ? ctx.fill() : ctx.stroke(); ctx.restore(); } },
         matrix: (c, o=0) => { if(matrixDrops.length < canvas.width/20) { for(let i=0; i<canvas.width/20; i++) matrixDrops[i] = Math.random()*canvas.height; } ctx.fillStyle = c || getDrawColor(0.5); ctx.font = "15px monospace"; const l=frequencyData.length; for(let i=0; i<matrixDrops.length; i++) { const H = frequencyData[i % l] * settings.sensitivity; const char = String.fromCharCode(0x30A0 + Math.random()*96); ctx.fillText(char, i*20 + o, matrixDrops[i]); if(matrixDrops[i]*H > 10000 && Math.random() > 0.95) matrixDrops[i] = 0; matrixDrops[i] += (H/50) + 2; if(matrixDrops[i] > canvas.height) matrixDrops[i] = 0; } },
         helix: (c, o=0) => { const hY=canvas.height/2; ctx.lineWidth=2; for(let i=0; i<canvas.width; i+=5) { const idx = Math.floor((i/canvas.width) * frequencyData.length); const H = frequencyData[idx] * settings.sensitivity; const y1 = hY + Math.sin(i*0.02 + dynamicRotation)*50 + Math.sin(i*0.1)*H; const y2 = hY + Math.sin(i*0.02 + dynamicRotation + Math.PI)*50 - Math.sin(i*0.1)*H; ctx.fillStyle = c || getDrawColor(i/canvas.width); ctx.fillRect(i+o, y1, 3, 3); ctx.fillRect(i+o, y2, 3, 3); if(i%20===0) { ctx.strokeStyle = ctx.fillStyle; ctx.beginPath(); ctx.moveTo(i+o, y1); ctx.lineTo(i+o, y2); ctx.stroke(); } } },
         pixelGrid: (c, o=0) => { const cols=32, rows=18; const cw=canvas.width/cols, ch=canvas.height/rows; for(let y=0; y<rows; y++){ for(let x=0; x<cols; x++){ const idx = Math.floor(((x+y*cols)/(cols*rows)) * frequencyData.length); const val = frequencyData[idx]; if(val > 255 - (settings.sensitivity*50)) { ctx.fillStyle = c || getDrawColor(val/255); ctx.fillRect(x*cw+o, y*ch, cw-2, ch-2); } } } },
         radar: (c, o=0) => { const cx=canvas.width/2+o, cy=canvas.height/2, radius=Math.min(canvas.width, canvas.height)/2; const angle = dynamicRotation % (Math.PI*2); ctx.strokeStyle = c || getDrawColor(0.5); ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(angle)*radius, cy + Math.sin(angle)*radius); ctx.stroke(); ctx.fillStyle = `rgba(${backgroundRgb.r}, ${backgroundRgb.g}, ${backgroundRgb.b}, 0.1)`; ctx.arc(cx, cy, radius, angle, angle+0.5); ctx.fill(); for(let i=0; i<10; i++) { const r = (i/10)*radius; const val = frequencyData[i*10]; if(val>100) { ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2); ctx.strokeStyle = `rgba(255,255,255,${val/255})`; ctx.stroke(); } } },
         waves: (c, o=0) => { const l=frequencyData.length; for(let j=0; j<5; j++) { ctx.beginPath(); ctx.lineWidth=2; ctx.strokeStyle = c || getDrawColor(j/5); for(let i=0; i<canvas.width; i+=10) { const idx = Math.floor((i/canvas.width)*l); const val = frequencyData[idx] * settings.sensitivity; const y = canvas.height/2 + (j*30) - 60 + Math.sin(i*0.01 + dynamicRotation + j)*50 - val/2; i===0?ctx.moveTo(i+o, y):ctx.lineTo(i+o, y); } ctx.stroke(); } },
         frequencyWave: (c, o=0) => { const l=frequencyData.length, w=canvas.width/l; let x=o; ctx.lineWidth=3; const g = c ? c : ctx.createLinearGradient(0,0,canvas.width,0); if(!c && !settings.rainbowMode){ settings.gradientColors.forEach((col,i)=>g.addColorStop(i/(settings.gradientColors.length-1), col)); } ctx.strokeStyle=settings.rainbowMode ? getDrawColor(0.5) : g; ctx.beginPath(); for(let i=0;i<l;i++){ const H=frequencyData[i]*(settings.sensitivity/1.5), y=canvas.height-H; i===0?ctx.moveTo(x,y):ctx.lineTo(x,y); x+=w;} ctx.stroke(); },
-        heartbeat: (c, o=0) => { const l = timeDomainData.length, w = canvas.width / l; let x = o; ctx.lineWidth = 4; const g = c ? c : ctx.createLinearGradient(0,0,canvas.width,0); if(!c && !settings.rainbowMode){ settings.gradientColors.forEach((col,i)=>g.addColorStop(i/(settings.gradientColors.length-1), col)); } ctx.strokeStyle = settings.rainbowMode ? getDrawColor(0.5) : g; ctx.beginPath(); for(let i=0; i<l; i++) { let v = (timeDomainData[i] - 128.0) * settings.sensitivity; v = Math.sign(v) * Math.pow(Math.abs(v), 1.2); const y = canvas.height/2 - v; if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); x += w; } ctx.stroke(); },
         circularWaveform: (c, o=0) => { const l=timeDomainData.length, hX=canvas.width/2+o, hY=canvas.height/2; const g = c ? c : ctx.createLinearGradient(0,0,canvas.width,canvas.height); if(!c && !settings.rainbowMode){ settings.gradientColors.forEach((col,i)=>g.addColorStop(i/(settings.gradientColors.length-1), col)); } ctx.strokeStyle = settings.rainbowMode ? getDrawColor(0.5) : g; ctx.lineWidth=3; ctx.beginPath(); for(let i=0;i<l;i++){ const d=(timeDomainData[i]-128), r=200+(d*(settings.sensitivity/1.5)), a=(i/l)*2*Math.PI, x=hX+Math.cos(a)*r, y=hY+Math.sin(a)*r; i===0?ctx.moveTo(x,y):ctx.lineTo(x,y); } ctx.closePath(); ctx.stroke();},
         waveform: (c, o=0) => { const l=timeDomainData.length, w=canvas.width*1.0/l; let x=o; ctx.lineWidth=3; const g = c ? c : ctx.createLinearGradient(0,0,canvas.width,0); if(!c && !settings.rainbowMode){ settings.gradientColors.forEach((col,i)=>g.addColorStop(i/(settings.gradientColors.length-1), col)); } ctx.strokeStyle=settings.rainbowMode ? getDrawColor(0.5) : g; ctx.beginPath(); for(let i=0;i<l;i++){ const v=timeDomainData[i]/128.0, y=v*canvas.height/2; i===0?ctx.moveTo(x,y):ctx.lineTo(x,y); x+=w;} ctx.lineTo(canvas.width+o,canvas.height/2); ctx.stroke();},
-        tunnel: (c, o=0) => { const hX = canvas.width / 2 + o, hY = canvas.height / 2; const bass = frequencyData[2] * (settings.sensitivity / 2); ctx.lineWidth = 2 + bass/20; const numRings = 15; for(let i=1; i<=numRings; i++) { const phase = ((i + dynamicRotation/2) % numRings) / numRings; const r = phase * Math.max(canvas.width, canvas.height); const C = c || getDrawColor(phase); ctx.globalAlpha = Math.max(0, 1 - phase); settings.filledShapes ? ctx.fillStyle = C : ctx.strokeStyle = C; const currentRot = dynamicRotation*(i%2==0?1:-1); if(settings.circularDirection === 'inward') { drawPolygon(hX, hY, 6, Math.max(0.1, Math.max(canvas.width, canvas.height) - r), currentRot, C); } else { drawPolygon(hX, hY, 6, Math.max(0.1, r), currentRot, C); } } ctx.globalAlpha = 1.0; },
-        hyperspace: (c, o=0) => { if(!window.stars) window.stars = Array.from({length: 400}, () => ({x: (Math.random()-0.5)*2000, y: (Math.random()-0.5)*2000, z: Math.random()*2000})); const cx = canvas.width/2 + o, cy = canvas.height/2; const avg = getAverageVolume(frequencyData); const speed = 2 + (avg/255)*30 * settings.sensitivity; ctx.globalCompositeOperation = 'screen'; window.stars.forEach((star, i) => { star.z -= speed; if(star.z <= 0) { star.z = 2000; star.x = (Math.random()-0.5)*2000; star.y = (Math.random()-0.5)*2000; } const px = cx + (star.x / star.z) * 500, py = cy + (star.y / star.z) * 500; if (px >= 0 && px <= canvas.width && py >= 0 && py <= canvas.height) { const size = Math.max(0.1, (2000 - star.z) / 400); const C = c || getDrawColor(i / 400); ctx.fillStyle = C; ctx.beginPath(); ctx.arc(px, py, size, 0, Math.PI*2); ctx.fill(); if(avg > 100 && i % 10 === 0) { ctx.strokeStyle = C; ctx.globalAlpha = (avg-100)/155 * 0.5; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(px, py); ctx.stroke(); ctx.globalAlpha = 1.0; } } }); ctx.globalCompositeOperation = 'source-over'; },
-        wireframeSphere: (c, o=0) => { const cx = canvas.width/2 + o, cy = canvas.height/2; const rBase = Math.min(canvas.width, canvas.height) / 4; const bands = 12, segments = 24, l = frequencyData.length; ctx.lineWidth = 1.5; for(let i=0; i<=bands; i++) { const theta = (i / bands) * Math.PI; ctx.beginPath(); for(let j=0; j<=segments; j++) { const phi = (j / segments) * Math.PI * 2 + dynamicRotation; const freqIdx = Math.floor(((i*segments + j) / (bands*segments)) * (l/2)); const H = frequencyData[freqIdx] * (settings.sensitivity/2); const r = rBase + H; const x3d = r * Math.sin(theta) * Math.cos(phi), y3d = r * Math.cos(theta), z3d = r * Math.sin(theta) * Math.sin(phi); const fov = 500, z = z3d + fov, x = cx + (x3d * fov) / z, y = cy + (y3d * fov) / z; if (j===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); } ctx.closePath(); const C = c || getDrawColor(i/bands); settings.filledShapes ? ctx.fillStyle = C : ctx.strokeStyle = C; settings.filledShapes ? (ctx.globalAlpha=0.1, ctx.fill(), ctx.globalAlpha=1.0) : null; ctx.stroke(); } },
-        rings: (c, o=0) => { const hX = canvas.width / 2 + o, hY = canvas.height / 2; const buckets = 5; const l = Math.floor(frequencyData.length / 2); for(let b=1; b<=buckets; b++) { ctx.beginPath(); const C = c || getDrawColor(b/buckets); settings.filledShapes ? ctx.fillStyle = C : ctx.strokeStyle = C; ctx.lineWidth = 3; const baseRadius = b * 80; for(let i=0; i<l; i++) { const H = frequencyData[Math.floor(i * (frequencyData.length / l))] * (settings.sensitivity/2); const deformation = (i % b === 0) ? H : H/2; const r = baseRadius + deformation; const a = (i/l)*2*Math.PI + (dynamicRotation * (b%2==0?1:-1)); const x = hX + Math.cos(a)*r, y = hY + Math.sin(a)*r; if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); } ctx.closePath(); settings.filledShapes ? ctx.globalAlpha = 0.2 : ctx.globalAlpha = 1; settings.filledShapes ? ctx.fill() : ctx.stroke(); ctx.globalAlpha = 1.0; } },
-        floatingDust: (c, o=0) => { if(!window.dustArray) window.dustArray = Array.from({length: 150}, () => ({x: Math.random(), y: Math.random(), s: Math.random(), v: Math.random()*0.001 + 0.0005})); const l = frequencyData.length; const avg = getAverageVolume(frequencyData); const intensity = Math.min(1, avg / 140); window.dustArray.forEach((dust, i) => { const freqIdx = Math.floor((i / 150) * l); const H = frequencyData[freqIdx] * settings.sensitivity; dust.y -= (dust.v + (H / 20000) * (intensity + 0.1)); if(dust.y < 0) { dust.y = 1; dust.x = Math.random(); } const px = dust.x * canvas.width + o, py = dust.y * canvas.height; const radius = (dust.s * 5) + (H / 20); ctx.beginPath(); ctx.arc(px, py, Math.max(0.1, radius), 0, Math.PI*2); const C = c || getDrawColor(dust.y); ctx.fillStyle = C; ctx.globalAlpha = Math.min(1, H/100 + 0.2); ctx.fill(); }); ctx.globalAlpha = 1.0; },
         
-        // --- 3 NEW VISUALIZERS ---
-        cube: (c, o=0) => {
+        // --- REPLACED VISUALIZERS ---
+        orbit: (c, o=0) => {
             const cx = canvas.width/2 + o, cy = canvas.height/2;
-            const bass = frequencyData[2] * (settings.sensitivity / 2);
-            const size = 100 + bass;
-            const nodes = [[-1,-1,-1], [1,-1,-1],[1,1,-1], [-1,1,-1], [-1,-1,1], [1,-1,1],[1,1,1], [-1,1,1]];
-            const edges = [[0,1], [1,2],[2,3], [3,0], [4,5], [5,6], [6,7], [7,4], [0,4], [1,5], [2,6],[3,7]];
-            const angleX = dynamicRotation;
-            const angleY = dynamicRotation * 1.3;
-            ctx.strokeStyle = c || getDrawColor(0.5);
-            ctx.lineWidth = 3;
-            ctx.beginPath();
-            edges.forEach(edge => {
-                const drawNode = (n) => {
-                    let x = nodes[n][0], y = nodes[n][1], z = nodes[n][2];
-                    let ty = y*Math.cos(angleX) - z*Math.sin(angleX), tz = y*Math.sin(angleX) + z*Math.cos(angleX);
-                    y = ty; z = tz;
-                    let tx = x*Math.cos(angleY) + z*Math.sin(angleY); z = -x*Math.sin(angleY) + z*Math.cos(angleY);
-                    x = tx;
-                    const scale = 400 / (400 + z * size);
-                    return[cx + x * size * scale, cy + y * size * scale];
-                };
-                const [x1, y1] = drawNode(edge[0]);
-                const [x2, y2] = drawNode(edge[1]);
-                ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
-            });
-            ctx.stroke();
-        },
-        lightning: (c, o=0) => {
-            const avg = getAverageVolume(frequencyData) * settings.sensitivity;
-            if (avg < 30) return;
-            ctx.lineWidth = 2 + (avg / 40);
-            ctx.strokeStyle = c || getDrawColor(Math.random());
-            ctx.shadowBlur = 10;
-            ctx.shadowColor = ctx.strokeStyle;
-            ctx.beginPath();
-            let x = o;
-            let y = canvas.height / 2;
-            ctx.moveTo(x, y);
-            const segments = 30;
-            const segWidth = canvas.width / segments;
-            for (let i = 1; i <= segments; i++) {
-                x += segWidth;
-                y = (canvas.height / 2) + (Math.random() - 0.5) * (avg * 4);
-                ctx.lineTo(x, y);
-                if (Math.random() > 0.85) {
-                    const curX = x, curY = y;
-                    ctx.lineTo(curX + (Math.random()-0.5)*150, curY + (Math.random()-0.5)*150);
-                    ctx.moveTo(curX, curY);
-                }
-            }
-            ctx.stroke();
-            ctx.shadowBlur = 0;
-        },
-        blackHole: (c, o=0) => {
-            const cx = canvas.width / 2 + o, cy = canvas.height / 2;
-            const bass = frequencyData[2] * (settings.sensitivity / 1.5);
-            const l = Math.floor(frequencyData.length / 3);
-            for (let i = 0; i < l; i+=2) {
+            const l = Math.floor(frequencyData.length / 4);
+            for(let i=1; i<l; i+=2) {
                 const val = frequencyData[i] * settings.sensitivity;
-                const angle = (i / l) * Math.PI * 2 + dynamicRotation * (i%2===0?-2:2);
-                const r = 120 + bass + val;
+                if (val < 5) continue;
+                const r = i * 4 + val/2; 
+                const angle = (performance.now() / 1000) * (1 + i/50) + dynamicRotation;
                 const x = cx + Math.cos(angle) * r;
                 const y = cy + Math.sin(angle) * r;
-                ctx.fillStyle = c || getDrawColor(i/l);
-                ctx.beginPath(); ctx.arc(x, y, 2 + val/50, 0, Math.PI * 2); ctx.fill();
-                ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(cx + Math.cos(angle - 0.2) * (r - 30), cy + Math.sin(angle - 0.2) * (r - 30));
-                ctx.strokeStyle = ctx.fillStyle; ctx.lineWidth = 1; ctx.globalAlpha = 0.4; ctx.stroke(); ctx.globalAlpha = 1.0;
+                ctx.beginPath();
+                ctx.arc(x, y, Math.max(1, val/15), 0, Math.PI*2);
+                const C = c || getDrawColor(i/l);
+                settings.filledShapes ? (ctx.fillStyle = C, ctx.fill()) : (ctx.strokeStyle = C, ctx.lineWidth = 2, ctx.stroke());
             }
-            ctx.beginPath(); ctx.arc(cx, cy, 100 + bass/2, 0, Math.PI * 2); ctx.fillStyle = "#000000"; ctx.fill();
-            ctx.lineWidth = 4; ctx.strokeStyle = c || getDrawColor(0.5); ctx.stroke();
+        },
+        // NEW: Ransom Popups (replaces terrain)
+        ransom: (c, o=0) => {
+            if(!window.ransomPopups) window.ransomPopups = [];
+            const bass = frequencyData[2] * settings.sensitivity;
+            const avg = getAverageVolume(frequencyData) * settings.sensitivity;
+
+            // Occasionally clear the screen completely to add to the glitch effect, overriding the fade
+            if(bass > 240 && Math.random() > 0.9) {
+                ctx.fillStyle = `rgba(0, 0, 0, 0.8)`;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+
+            if (bass > 150 && Math.random() > 0.4 && window.ransomPopups.length < 40) {
+                const w = 150 + Math.random() * 200;
+                const h = 100 + Math.random() * 150;
+                const msgs = ["SYSTEM LOCKED", "FILES_ENCRYPTED", "PAY_RANSOM", "FATAL_ERROR", "CORRUPTED", "ACCESS_DENIED", "MALWARE_DETECTED"];
+                window.ransomPopups.push({
+                    x: Math.random() * (canvas.width - w) + o,
+                    y: Math.random() * (canvas.height - h),
+                    w: w,
+                    h: h,
+                    msg: msgs[Math.floor(Math.random() * msgs.length)],
+                    life: 10 + Math.random() * 30, // Short lifespan, rapid popping
+                    color: c || getDrawColor(Math.random()),
+                    shake: Math.random() > 0.7,
+                    glitchLines: Math.floor(Math.random() * 5)
+                });
+            }
+
+            for (let i = window.ransomPopups.length - 1; i >= 0; i--) {
+                let p = window.ransomPopups[i];
+                p.life--;
+                if (p.life <= 0) { window.ransomPopups.splice(i, 1); continue; }
+
+                let dx = 0, dy = 0;
+                if (p.shake && avg > 100) {
+                    dx = (Math.random() - 0.5) * (avg / 5);
+                    dy = (Math.random() - 0.5) * (avg / 5);
+                }
+
+                ctx.save();
+                ctx.translate(dx, dy);
+
+                // Main Window Body
+                ctx.fillStyle = "rgba(10, 10, 10, 0.95)";
+                ctx.fillRect(p.x, p.y, p.w, p.h);
+
+                // Window Border
+                ctx.strokeStyle = p.color;
+                ctx.lineWidth = 2;
+                ctx.strokeRect(p.x, p.y, p.w, p.h);
+
+                // Title Bar
+                ctx.fillStyle = p.color;
+                ctx.fillRect(p.x, p.y, p.w, 25);
+
+                // Title Text
+                ctx.fillStyle = "#000"; // Dark text on colored title bar
+                ctx.font = "bold 14px monospace";
+                ctx.textAlign = "left";
+                ctx.fillText("WARNING.exe", p.x + 8, p.y + 18);
+
+                // Fake X Button
+                ctx.fillStyle = "#ff0000";
+                ctx.fillRect(p.x + p.w - 30, p.y + 2, 28, 21);
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "bold 14px sans-serif";
+                ctx.textAlign = "center";
+                ctx.fillText("X", p.x + p.w - 16, p.y + 18);
+
+                // Body Message
+                ctx.fillStyle = p.color;
+                ctx.font = "18px monospace";
+                ctx.textAlign = "center";
+                ctx.fillText(p.msg, p.x + p.w / 2, p.y + p.h / 2 + 10);
+
+                // Glitch slices
+                if (avg > 180 && Math.random() > 0.5) {
+                    for (let g = 0; g < p.glitchLines; g++) {
+                        ctx.fillStyle = Math.random() > 0.5 ? p.color : "#ffffff";
+                        ctx.fillRect(p.x, p.y + Math.random() * p.h, p.w, 2 + Math.random() * 6);
+                    }
+                }
+                ctx.restore();
+            }
         }
     };
+
     function drawPolygon(x,y,s,r,rot,C){ctx.beginPath(); for(let i=0;i<s;i++){ctx.lineTo(x+r*Math.cos(rot+i*2*Math.PI/s),y+r*Math.sin(rot+i*2*Math.PI/s));} ctx.closePath(); settings.filledShapes?ctx.fill():ctx.stroke();}
     function drawProfileImage() { if (!profileImage || !profileImage.complete) return; const centerX = canvas.width / 2, centerY = canvas.height / 2; const size = 120; ctx.save(); ctx.beginPath(); ctx.arc(centerX, centerY, size / 2, 0, Math.PI * 2); ctx.clip(); ctx.drawImage(profileImage, centerX - size / 2, centerY - size / 2, size, size); ctx.restore(); }
     
@@ -275,6 +317,7 @@ window.addEventListener('DOMContentLoaded', () => {
         const saved = localStorage.getItem('visualizerSettings'); if (saved) settings = { ...defaultSettings, ...JSON.parse(saved) }; 
         
         visBtns.forEach(btn => { btn.classList.toggle('active', btn.dataset.vis === settings.visualizerType); });
+        visualizerSelect.value = settings.visualizerType; // keep hidden select updated for logic
 
         dynamicCheckbox.checked = settings.dynamicEffects; shakeSlider.value = settings.shake; aberrationSlider.value = settings.aberration; glowSlider.value = settings.glow; glowColor.value = settings.glowColor; scanlineSlider.value = settings.scanlines; accentColorCheckbox.checked = settings.useAccentColor; backgroundColorInput.value = settings.backgroundColor; sensitivitySlider.value = settings.sensitivity; smoothingSlider.value = (settings.smoothing || 0.8) * 100; trailSlider.value = settings.trailAmount * 100; audioSourceSelect.value = settings.audioType; fillCheckbox.checked = settings.filledShapes; directionSelect.value = settings.circularDirection; rotationSlider.value = settings.rotationSpeed; rainbowCheckbox.checked = settings.rainbowMode; rainbowSpeedSlider.value = settings.rainbowSpeed; gradientBgCheckbox.checked = settings.gradientBackground; backgroundRgb = hexToRgb(settings.backgroundColor); dynamicEffectsFieldset.classList.toggle('disabled', !settings.dynamicEffects); if(settings.profileImagePath) setProfileImage(settings.profileImagePath); handleVisualizerOptionsVisibility(); handleRainbowModeVisibility(); updateContrast(); 
     }
@@ -294,7 +337,7 @@ window.addEventListener('DOMContentLoaded', () => {
     function getAverageVolume(dataArray) { let sum = 0; if (dataArray) { for (let i = 0; i < dataArray.length; i++) { sum += dataArray[i]; } return sum / dataArray.length; } return 0; }
     function getMultiStopGradientColor(fraction) { if (!settings.gradientColors || settings.gradientColors.length < 2) return (settings.gradientColors && settings.gradientColors[0]) || '#ffffff'; const stopIndex = fraction * (settings.gradientColors.length - 1); const startIndex = Math.floor(stopIndex); const endIndex = Math.min(startIndex + 1, settings.gradientColors.length - 1); const localFraction = stopIndex - startIndex; const start = hexToRgb(settings.gradientColors[startIndex]); const end = hexToRgb(settings.gradientColors[endIndex]); const r = Math.round(start.r + (end.r - start.r) * localFraction); const g = Math.round(start.g + (end.g - start.g) * localFraction); const b = Math.round(start.b + (end.b - start.b) * localFraction); return `rgb(${r}, ${g}, ${b})`; }
     function getDrawColor(fraction) { if (settings.rainbowMode) { const hue = (fraction * 360) + rainbowHueOffset; return `hsl(${hue % 360}, 100%, 50%)`; } return getMultiStopGradientColor(fraction); }
-    function handleVisualizerOptionsVisibility() { const type = settings.visualizerType; const hasFillOption =['blob', 'sunburst', 'polygons', 'nestedPolygons', 'shatter', 'flower', 'kaleidoscope', 'tunnel', 'rings', 'wireframeSphere', 'honeycomb', 'blackHole'].includes(type); const hasDirectionOption = ['circle', 'tunnel'].includes(type); const hasRotationOption =['polygons', 'nestedPolygons', 'starfield', 'kaleidoscope', 'tunnel', 'rings', 'wireframeSphere', 'vortex', 'laser', 'cube', 'blackHole'].includes(type); visualizerOptionsFieldset.classList.toggle('hidden', !hasFillOption && !hasDirectionOption && !hasRotationOption); fillCheckbox.parentElement.style.display = hasFillOption ? '' : 'none'; directionSelect.parentElement.style.display = hasDirectionOption ? '' : 'none'; rotationSlider.parentElement.style.display = hasRotationOption ? '' : 'none'; }
+    function handleVisualizerOptionsVisibility() { const type = settings.visualizerType; const hasFillOption =['blob', 'sunburst', 'polygons', 'nestedPolygons', 'shatter', 'flower', 'kaleidoscope', 'tunnel', 'rings', 'wireframeSphere', 'honeycomb', 'orbit', 'ransom'].includes(type); const hasDirectionOption = ['circle', 'tunnel'].includes(type); const hasRotationOption =['polygons', 'nestedPolygons', 'starfield', 'kaleidoscope', 'tunnel', 'rings', 'wireframeSphere', 'vortex', 'orbit'].includes(type); visualizerOptionsFieldset.classList.toggle('hidden', !hasFillOption && !hasDirectionOption && !hasRotationOption); fillCheckbox.parentElement.style.display = hasFillOption ? '' : 'none'; directionSelect.parentElement.style.display = hasDirectionOption ? '' : 'none'; rotationSlider.parentElement.style.display = hasRotationOption ? '' : 'none'; }
     function handleRainbowModeVisibility() { rainbowControls.classList.toggle('hidden', !settings.rainbowMode); gradientControls.classList.toggle('disabled', settings.rainbowMode || settings.useAccentColor); accentColorCheckbox.disabled = settings.rainbowMode; }
     
     function setProfileImage(base64Data) { 
@@ -315,6 +358,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
     // --- EVENT LISTENERS ---
     
+    // Visualizer Grid Button Clicks
     visBtns.forEach(btn => {
         btn.addEventListener('click', (e) => {
             settings.visualizerType = e.target.dataset.vis;
@@ -326,8 +370,24 @@ window.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    settingsButton.addEventListener('click', () => settingsPanel.classList.toggle('open'));
-    closeSettingsButton.addEventListener('click', () => settingsPanel.classList.remove('open'));
+    settingsButton.addEventListener('click', () => {
+        settingsPanel.classList.toggle('open');
+        resetIdleTimer();
+    });
+    
+    closeSettingsButton.addEventListener('click', () => {
+        settingsPanel.classList.remove('open');
+        resetIdleTimer();
+    });
+    
+    // Reset Settings Button
+    document.getElementById('resetSettingsButton').addEventListener('click', () => {
+        if(confirm("Are you sure you want to reset all settings to defaults?")) {
+            settings = { ...defaultSettings };
+            saveSettings();
+            loadSettings();
+        }
+    });
     
     selectPfpButton.addEventListener('click', async () => { 
         const paths = await window.electronAPI.showOpenDialog({ properties: ['openFile'], filters:[{ name: 'Images', extensions:['png', 'jpg', 'jpeg'] }] }); 
@@ -340,7 +400,7 @@ window.addEventListener('DOMContentLoaded', () => {
     clearPfpButton.addEventListener('click', () => setProfileImage(null));
     
     extractColorsButton.addEventListener('click', async () => { 
-        const paths = await window.electronAPI.showOpenDialog({ properties:['openFile'], filters:[{ name: 'Images', extensions:['png', 'jpg', 'jpeg'] }] }); 
+        const paths = await window.electronAPI.showOpenDialog({ properties:['openFile'], filters: [{ name: 'Images', extensions:['png', 'jpg', 'jpeg'] }] }); 
         if (paths && paths[0]) {
             const b64 = await window.electronAPI.readFileBase64(paths[0]);
             if (b64) extractColorsFromImage(b64);

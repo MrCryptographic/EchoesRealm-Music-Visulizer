@@ -52,7 +52,12 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
+      webSecurity: false,
     }
+  });
+
+  win.webContents.session.setPermissionRequestHandler((webContents, permission, callback) => {
+    callback(true);
   });
   win.loadFile('index.html');
 }
