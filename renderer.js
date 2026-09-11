@@ -2,17 +2,11 @@ window.addEventListener('DOMContentLoaded', () => {
     // --- DOM ELEMENT REFERENCES ---
     const canvas = document.getElementById('visualizerCanvas'), ctx = canvas.getContext('2d'), epilepsyWarning = document.getElementById('epilepsyWarning'), acceptWarningButton = document.getElementById('acceptWarningButton'), uiContainer = document.getElementById('uiContainer'), settingsButton = document.getElementById('settingsButton'), settingsPanel = document.getElementById('settingsPanel'), closeSettingsButton = document.getElementById('closeButton'), visualizerOptionsFieldset = document.getElementById('visualizerOptionsFieldset'), fillCheckbox = document.getElementById('fillCheckbox'), directionSelect = document.getElementById('directionSelect'), rotationSlider = document.getElementById('rotationSlider'), selectPfpButton = document.getElementById('selectPfpButton'), clearPfpButton = document.getElementById('clearPfpButton'), pfpPreview = document.getElementById('pfpPreview'), dynamicEffectsFieldset = document.getElementById('dynamicEffectsFieldset'), visualizerSelect = document.getElementById('visualizerSelect'), dynamicCheckbox = document.getElementById('dynamicCheckbox'), shakeSlider = document.getElementById('shakeSlider'), aberrationSlider = document.getElementById('aberrationSlider'), zoomSlider = document.getElementById('zoomSlider'), flashSlider = document.getElementById('flashSlider'), scanlineSlider = document.getElementById('scanlineSlider'), accentColorCheckbox = document.getElementById('accentColorCheckbox'), gradientControls = document.getElementById('gradientControls'), gradientPickerContainer = document.getElementById('gradientPickerContainer'), addColorButton = document.getElementById('addColorButton'), extractColorsButton = document.getElementById('extractColorsButton'), backgroundColorInput = document.getElementById('backgroundColor'), gradientBgCheckbox = document.getElementById('gradientBgCheckbox'), sensitivitySlider = document.getElementById('sensitivitySlider'), smoothingSlider = document.getElementById('smoothingSlider'), trailSlider = document.getElementById('trailSlider'), showHUDCheckbox = document.getElementById('showHUDCheckbox'), silentMessage = document.getElementById('silentMessage'), audioSourceSelect = document.getElementById('audioSourceSelect'), microphoneSelectRow = document.getElementById('microphoneSelectRow'), microphoneSelect = document.getElementById('microphoneSelect'), rainbowCheckbox = document.getElementById('rainbowCheckbox'), rainbowControls = document.getElementById('rainbowControls'), rainbowSpeedSlider = document.getElementById('rainbowSpeedSlider'), resetSettingsButton = document.getElementById('resetSettingsButton');
     const visBtns = document.querySelectorAll('.vis-btn');
-    const selectAudioButton = document.getElementById('selectAudioButton');
-    const audioFileName = document.getElementById('audioFileName');
-    const audioPlayer = document.getElementById('audioPlayer');
 
     // --- GLOBAL STATE ---
     let audioContext, analyser, frequencyData, timeDomainData;
     let silenceCounter = 0, silentMessageInterval = null, dynamicRotation = 0, rainbowHueOffset = 0, idleTimer = null;
     let profileImage = null; let matrixDrops = []; 
-
-    // New state for HUD metadata
-    let currentSong = { title: "Monitoring Audio", artist: "Live Input" };
 
     const defaultSettings = { 
         visualizerType: 'centerBars', dynamicEffects: false, shake: 15, aberration: 5, zoom: 10, flash: 20, scanlines: 20, showHUD: false,
@@ -51,7 +45,6 @@ window.addEventListener('DOMContentLoaded', () => {
         draw(); 
     }, { once: true });
 
-    // QOL: Double Click Fullscreen
     document.addEventListener('dblclick', (e) => {
         if (e.target.closest('#settingsPanel') || e.target.closest('#uiContainer')) return;
         if (!document.fullscreenElement) {
@@ -61,7 +54,6 @@ window.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // QOL: Hide UI on Idle
     function resetIdleTimer() {
         uiContainer.classList.remove('faded');
         clearTimeout(idleTimer);
@@ -86,10 +78,14 @@ window.addEventListener('DOMContentLoaded', () => {
         const avgVolume = getAverageVolume(frequencyData);
         const intensity = Math.min(1, avgVolume / 140);
         
+        // FIX: Calculate pure bass intensity specifically for the Flash effect
+        let bassSum = 0;
+        for(let i = 0; i < 5; i++) bassSum += frequencyData[i];
+        const bassIntensity = Math.min(1, (bassSum / 5) / 200); // 200 is a high threshold
+        
         const fastFade = 0.95, transitionSpeed = 4;
         const effectiveTrailAmount = fastFade - (fastFade - settings.trailAmount) * Math.min(1, intensity * transitionSpeed);
         
-        // Background Drawing
         if (settings.gradientBackground && settings.gradientColors.length >= 2 && !settings.rainbowMode) {
             const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
             settings.gradientColors.forEach((color, i) => grad.addColorStop(i / (settings.gradientColors.length - 1), color));
@@ -130,7 +126,7 @@ window.addEventListener('DOMContentLoaded', () => {
         
         ctx.restore();
         
-        // Post Effects (Scanlines, Flash, HUD)
+        // Post Effects (Scanlines, Flash)
         if (settings.dynamicEffects) { 
             const lineOpacity = intensity * (settings.scanlines / 100); 
             if (lineOpacity > 0.05) { 
@@ -138,8 +134,10 @@ window.addEventListener('DOMContentLoaded', () => {
                 for (let y = 0; y < canvas.height; y += 4) { ctx.fillRect(0, y, canvas.width, 2); } 
             } 
             
-            if (settings.flash > 0 && intensity > 0.8) {
-                const flashOpacity = (intensity - 0.8) * (settings.flash / 50);
+            // FIX: Peak flash using the dedicated bassIntensity variable
+            if (settings.flash > 0 && bassIntensity > 0.8) {
+                // Multiplies the remaining opacity (0.0 - 0.2) up to 1.0, then scales by user setting
+                const flashOpacity = ((bassIntensity - 0.8) * 5) * (settings.flash / 50);
                 ctx.fillStyle = `rgba(255, 255, 255, ${flashOpacity})`;
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
             }
@@ -173,21 +171,7 @@ window.addEventListener('DOMContentLoaded', () => {
         wireframeSphere: (c, o=0) => { const cx = canvas.width/2 + o, cy = canvas.height/2; const rBase = Math.min(canvas.width, canvas.height) / 4; const bands = 12, segments = 24, l = frequencyData.length; ctx.lineWidth = 1.5; for(let i=0; i<=bands; i++) { const theta = (i / bands) * Math.PI; ctx.beginPath(); for(let j=0; j<=segments; j++) { const phi = (j / segments) * Math.PI * 2 + dynamicRotation; const freqIdx = Math.floor(((i*segments + j) / (bands*segments)) * (l/2)); const H = frequencyData[freqIdx] * (settings.sensitivity/2); const r = rBase + H; const x3d = r * Math.sin(theta) * Math.cos(phi), y3d = r * Math.cos(theta), z3d = r * Math.sin(theta) * Math.sin(phi); const fov = 500, z = z3d + fov, x = cx + (x3d * fov) / z, y = cy + (y3d * fov) / z; if (j===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); } ctx.closePath(); const C = c || getDrawColor(i/bands); settings.filledShapes ? ctx.fillStyle = C : ctx.strokeStyle = C; settings.filledShapes ? (ctx.globalAlpha=0.1, ctx.fill(), ctx.globalAlpha=1.0) : null; ctx.stroke(); } },
         rings: (c, o=0) => { const hX = canvas.width / 2 + o, hY = canvas.height / 2; const buckets = 5; const l = Math.floor(frequencyData.length / 2); for(let b=1; b<=buckets; b++) { ctx.beginPath(); const C = c || getDrawColor(b/buckets); settings.filledShapes ? ctx.fillStyle = C : ctx.strokeStyle = C; ctx.lineWidth = 3; const baseRadius = b * 80; for(let i=0; i<l; i++) { const H = frequencyData[Math.floor(i * (frequencyData.length / l))] * (settings.sensitivity/2); const deformation = (i % b === 0) ? H : H/2; const r = baseRadius + deformation; const a = (i/l)*2*Math.PI + (dynamicRotation * (b%2==0?1:-1)); const x = hX + Math.cos(a)*r, y = hY + Math.sin(a)*r; if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); } ctx.closePath(); settings.filledShapes ? ctx.globalAlpha = 0.2 : ctx.globalAlpha = 1; settings.filledShapes ? ctx.fill() : ctx.stroke(); ctx.globalAlpha = 1.0; } },
         starfield: (c, o=0) => { const l=Math.floor(frequencyData.length/2); for(let i=1; i<l; i+=5) { const H=frequencyData[i]*(settings.sensitivity/2); if(H < 10) continue; const x = (i/l) * canvas.width + o; const y = (i%100/100) * canvas.height; const C=c||getDrawColor(i/l); ctx.strokeStyle=C; drawPolygon(x,y,4,H/10,dynamicRotation,C); }},
-        shatter: (c, o=0) => { 
-            const l=frequencyData.length, hX=canvas.width/2+o, hY=canvas.height/2; 
-            const avg=getAverageVolume(frequencyData)*(settings.sensitivity/1.5); 
-            const C=c||getDrawColor(0.5); 
-            settings.filledShapes?ctx.fillStyle=C:ctx.strokeStyle=C; ctx.lineWidth=3; 
-            ctx.beginPath(); 
-            for(let i=1;i<l;i+=2){
-                const H=frequencyData[i]*(settings.sensitivity/1.5);
-                const a=(i/l)*2*Math.PI + (dynamicRotation * (i%4===0?-1:1));
-                const r=100 + (H * (Math.random() * 1.5)); 
-                const x=hX+Math.cos(a)*r, y=hY+Math.sin(a)*r; 
-                i===1?ctx.moveTo(x,y):ctx.lineTo(x,y);
-            } 
-            ctx.closePath(); settings.filledShapes?ctx.fill():ctx.stroke(); 
-        },
+        shatter: (c, o=0) => { const l=frequencyData.length, hX=canvas.width/2+o, hY=canvas.height/2; const avg=getAverageVolume(frequencyData)*(settings.sensitivity/1.5); const C=c||getDrawColor(0.5); settings.filledShapes?ctx.fillStyle=C:ctx.strokeStyle=C; ctx.lineWidth=3; ctx.beginPath(); for(let i=1;i<l;i+=2){const a=(i/l)*2*Math.PI, r=100+Math.max(0, avg + (Math.random()-0.5)*avg*0.5), x=hX+Math.cos(a)*r, y=hY+Math.sin(a)*r; i===1?ctx.moveTo(x,y):ctx.lineTo(x,y);} ctx.closePath(); settings.filledShapes?ctx.fill():ctx.stroke(); },
         flower: (c,o=0) => { const l=Math.floor(frequencyData.length/2), hX=canvas.width/2+o, hY=canvas.height/2; const C=c||getDrawColor(0.5); settings.filledShapes?ctx.fillStyle=C:ctx.strokeStyle=C; ctx.lineWidth=3; ctx.beginPath(); const petals=6; for(let i=1;i<l;i++){ const H=frequencyData[i]*(settings.sensitivity/2); const r=150+H + Math.sin(i/l*2*Math.PI*petals)*50; const a=(i/l)*2*Math.PI; const x=hX+Math.cos(a)*r; const y=hY+Math.sin(a)*r; i===1?ctx.moveTo(x,y):ctx.lineTo(x,y); } ctx.closePath(); settings.filledShapes?ctx.fill():ctx.stroke();},
         matrix: (c, o=0) => { if(matrixDrops.length < canvas.width/20) { for(let i=0; i<canvas.width/20; i++) matrixDrops[i] = Math.random()*canvas.height; } ctx.fillStyle = c || getDrawColor(0.5); ctx.font = "15px monospace"; const l=frequencyData.length; for(let i=0; i<matrixDrops.length; i++) { const H = frequencyData[i % l] * settings.sensitivity; const char = String.fromCharCode(0x30A0 + Math.random()*96); ctx.fillText(char, i*20 + o, matrixDrops[i]); if(matrixDrops[i]*H > 10000 && Math.random() > 0.95) matrixDrops[i] = 0; matrixDrops[i] += (H/50) + 2; if(matrixDrops[i] > canvas.height) matrixDrops[i] = 0; } },
         helix: (c, o=0) => { const hY=canvas.height/2; ctx.lineWidth=2; for(let i=0; i<canvas.width; i+=5) { const idx = Math.floor((i/canvas.width) * frequencyData.length); const H = frequencyData[idx] * settings.sensitivity; const y1 = hY + Math.sin(i*0.02 + dynamicRotation)*50 + Math.sin(i*0.1)*H; const y2 = hY + Math.sin(i*0.02 + dynamicRotation + Math.PI)*50 - Math.sin(i*0.1)*H; ctx.fillStyle = c || getDrawColor(i/canvas.width); ctx.fillRect(i+o, y1, 3, 3); ctx.fillRect(i+o, y2, 3, 3); if(i%20===0) { ctx.strokeStyle = ctx.fillStyle; ctx.beginPath(); ctx.moveTo(i+o, y1); ctx.lineTo(i+o, y2); ctx.stroke(); } } },
@@ -195,43 +179,21 @@ window.addEventListener('DOMContentLoaded', () => {
         radar: (c, o=0) => { const cx=canvas.width/2+o, cy=canvas.height/2, radius=Math.min(canvas.width, canvas.height)/2; const angle = dynamicRotation % (Math.PI*2); ctx.strokeStyle = c || getDrawColor(0.5); ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(angle)*radius, cy + Math.sin(angle)*radius); ctx.stroke(); ctx.fillStyle = `rgba(${backgroundRgb.r}, ${backgroundRgb.g}, ${backgroundRgb.b}, 0.1)`; ctx.arc(cx, cy, radius, angle, angle+0.5); ctx.fill(); for(let i=0; i<10; i++) { const r = (i/10)*radius; const val = frequencyData[i*10]; if(val>100) { ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2); ctx.strokeStyle = `rgba(255,255,255,${val/255})`; ctx.stroke(); } } },
         waves: (c, o=0) => { const l=frequencyData.length; for(let j=0; j<5; j++) { ctx.beginPath(); ctx.lineWidth=2; ctx.strokeStyle = c || getDrawColor(j/5); for(let i=0; i<canvas.width; i+=10) { const idx = Math.floor((i/canvas.width)*l); const val = frequencyData[idx] * settings.sensitivity; const y = canvas.height/2 + (j*30) - 60 + Math.sin(i*0.01 + dynamicRotation + j)*50 - val/2; i===0?ctx.moveTo(i+o, y):ctx.lineTo(i+o, y); } ctx.stroke(); } },
         frequencyWave: (c, o=0) => { const l=frequencyData.length, w=canvas.width/l; let x=o; ctx.lineWidth=3; const g = c ? c : ctx.createLinearGradient(0,0,canvas.width,0); if(!c && !settings.rainbowMode){ settings.gradientColors.forEach((col,i)=>g.addColorStop(i/(settings.gradientColors.length-1), col)); } ctx.strokeStyle=settings.rainbowMode ? getDrawColor(0.5) : g; ctx.beginPath(); for(let i=0;i<l;i++){ const H=frequencyData[i]*(settings.sensitivity/1.5), y=canvas.height-H; i===0?ctx.moveTo(x,y):ctx.lineTo(x,y); x+=w;} ctx.stroke(); },
+        heartbeat: (c, o=0) => { const l = timeDomainData.length, w = canvas.width / l; let x = o; ctx.lineWidth = 4; const g = c ? c : ctx.createLinearGradient(0,0,canvas.width,0); if(!c && !settings.rainbowMode){ settings.gradientColors.forEach((col,i)=>g.addColorStop(i/(settings.gradientColors.length-1), col)); } ctx.strokeStyle = settings.rainbowMode ? getDrawColor(0.5) : g; ctx.beginPath(); for(let i=0; i<l; i++) { let v = (timeDomainData[i] - 128.0) * settings.sensitivity; v = Math.sign(v) * Math.pow(Math.abs(v), 1.2); const y = canvas.height/2 - v; if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); x += w; } ctx.stroke(); },
         circularWaveform: (c, o=0) => { const l=timeDomainData.length, hX=canvas.width/2+o, hY=canvas.height/2; const g = c ? c : ctx.createLinearGradient(0,0,canvas.width,canvas.height); if(!c && !settings.rainbowMode){ settings.gradientColors.forEach((col,i)=>g.addColorStop(i/(settings.gradientColors.length-1), col)); } ctx.strokeStyle = settings.rainbowMode ? getDrawColor(0.5) : g; ctx.lineWidth=3; ctx.beginPath(); for(let i=0;i<l;i++){ const d=(timeDomainData[i]-128), r=200+(d*(settings.sensitivity/1.5)), a=(i/l)*2*Math.PI, x=hX+Math.cos(a)*r, y=hY+Math.sin(a)*r; i===0?ctx.moveTo(x,y):ctx.lineTo(x,y); } ctx.closePath(); ctx.stroke();},
         waveform: (c, o=0) => { const l=timeDomainData.length, w=canvas.width*1.0/l; let x=o; ctx.lineWidth=3; const g = c ? c : ctx.createLinearGradient(0,0,canvas.width,0); if(!c && !settings.rainbowMode){ settings.gradientColors.forEach((col,i)=>g.addColorStop(i/(settings.gradientColors.length-1), col)); } ctx.strokeStyle=settings.rainbowMode ? getDrawColor(0.5) : g; ctx.beginPath(); for(let i=0;i<l;i++){ const v=timeDomainData[i]/128.0, y=v*canvas.height/2; i===0?ctx.moveTo(x,y):ctx.lineTo(x,y); x+=w;} ctx.lineTo(canvas.width+o,canvas.height/2); ctx.stroke();},
-        floatingDust: (c, o=0) => { if(!window.dustArray) window.dustArray = Array.from({length: 150}, () => ({x: Math.random(), y: Math.random(), s: Math.random(), v: Math.random()*0.001 + 0.0005})); const l = frequencyData.length; const avg = getAverageVolume(frequencyData); const intensity = Math.min(1, avg / 140); window.dustArray.forEach((dust, i) => { const freqIdx = Math.floor((i / 150) * l); const H = frequencyData[freqIdx] * settings.sensitivity; dust.y -= (dust.v + (H / 20000) * (intensity + 0.1)); if(dust.y < 0) { dust.y = 1; dust.x = Math.random(); } const px = dust.x * canvas.width + o, py = dust.y * canvas.height; const radius = (dust.s * 5) + (H / 20); ctx.beginPath(); ctx.arc(px, py, Math.max(0.1, radius), 0, Math.PI*2); const C = c || getDrawColor(dust.y); ctx.fillStyle = C; ctx.globalAlpha = Math.min(1, H/100 + 0.2); ctx.fill(); }); ctx.globalAlpha = 1.0; },
+        orbit: (c, o=0) => { const cx = canvas.width/2 + o, cy = canvas.height/2; const l = Math.floor(frequencyData.length / 4); for(let i=1; i<l; i+=2) { const val = frequencyData[i] * settings.sensitivity; if (val < 5) continue; const r = i * 4 + val/2; const angle = (performance.now() / 1000) * (1 + i/50) + dynamicRotation; const x = cx + Math.cos(angle) * r; const y = cy + Math.sin(angle) * r; ctx.beginPath(); ctx.arc(x, y, Math.max(1, val/15), 0, Math.PI*2); const C = c || getDrawColor(i/l); settings.filledShapes ? (ctx.fillStyle = C, ctx.fill()) : (ctx.strokeStyle = C, ctx.lineWidth = 2, ctx.stroke()); } },
         
-        // --- 2 NEW REBUILT VISUALIZERS ---
-        orbit: (c, o=0) => {
-            const cx = canvas.width/2 + o, cy = canvas.height/2;
-            const l = Math.floor(frequencyData.length / 4);
-            for(let i=1; i<l; i+=2) {
-                const val = frequencyData[i] * settings.sensitivity;
-                if (val < 5) continue;
-                const r = i * 4 + val/2; 
-                const angle = (performance.now() / 1000) * (1 + i/50) + dynamicRotation;
-                const x = cx + Math.cos(angle) * r;
-                const y = cy + Math.sin(angle) * r;
-                ctx.beginPath();
-                ctx.arc(x, y, Math.max(1, val/15), 0, Math.PI*2);
-                const C = c || getDrawColor(i/l);
-                settings.filledShapes ? (ctx.fillStyle = C, ctx.fill()) : (ctx.strokeStyle = C, ctx.lineWidth = 2, ctx.stroke());
-            }
-        },
-        
-        // --- NEW: Ransom Popups ---
         ransom: (c, o=0) => {
             if(!window.ransomPopups) window.ransomPopups = [];
             const bass = frequencyData[2] * settings.sensitivity;
             const avg = getAverageVolume(frequencyData) * settings.sensitivity;
             const cx = canvas.width / 2 + o, cy = canvas.height / 2;
 
-            // Background Text
             ctx.save();
             const textOpacity = 0.2 + (bass / 500); 
             let tdx = 0, tdy = 0;
-            if (bass > 200) {
-                tdx = (Math.random() - 0.5) * (bass/20);
-                tdy = (Math.random() - 0.5) * (bass/20);
-            }
+            if (bass > 200) { tdx = (Math.random() - 0.5) * (bass/20); tdy = (Math.random() - 0.5) * (bass/20); }
             ctx.translate(tdx, tdy);
             ctx.fillStyle = `rgba(255, 255, 255, ${Math.min(0.8, textOpacity)})`;
             ctx.font = 'bold 48px monospace';
@@ -239,27 +201,12 @@ window.addEventListener('DOMContentLoaded', () => {
             ctx.fillText("Where Forgotten Memories Go", cx, cy);
             ctx.restore();
 
-            // Occasional screen clear glitch
-            if(bass > 240 && Math.random() > 0.9) {
-                ctx.fillStyle = `rgba(0, 0, 0, 0.8)`;
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-            }
+            if(bass > 240 && Math.random() > 0.9) { ctx.fillStyle = `rgba(0, 0, 0, 0.8)`; ctx.fillRect(0, 0, canvas.width, canvas.height); }
 
-            // Spawn
             if (bass > 150 && Math.random() > 0.4 && window.ransomPopups.length < 30) {
                 const w = 150 + Math.random() * 200;
                 const h = 100 + Math.random() * 150;
-                window.ransomPopups.push({
-                    x: Math.random() * canvas.width,
-                    y: Math.random() * canvas.height,
-                    tx: Math.random() * (canvas.width - w) + o,
-                    ty: Math.random() * (canvas.height - h),
-                    w: w, h: h,
-                    msg: ["SYSTEM LOCKED", "FILES_ENCRYPTED", "PAY_RANSOM", "FATAL_ERROR", "CORRUPTED"][Math.floor(Math.random()*5)],
-                    life: 30 + Math.random() * 60,
-                    color: c || getDrawColor(Math.random()),
-                    glitchLines: Math.floor(Math.random() * 5)
-                });
+                window.ransomPopups.push({ x: Math.random() * canvas.width, y: Math.random() * canvas.height, tx: Math.random() * (canvas.width - w) + o, ty: Math.random() * (canvas.height - h), w: w, h: h, msg: ["SYSTEM LOCKED", "FILES_ENCRYPTED", "PAY_RANSOM", "FATAL_ERROR", "CORRUPTED"][Math.floor(Math.random()*5)], life: 30 + Math.random() * 60, color: c || getDrawColor(Math.random()), glitchLines: Math.floor(Math.random() * 5) });
             }
 
             const moveSpeed = 0.02 + (avg / 1000); 
@@ -268,53 +215,22 @@ window.addEventListener('DOMContentLoaded', () => {
                 let p = window.ransomPopups[i];
                 p.life--;
                 if (p.life <= 0) { window.ransomPopups.splice(i, 1); continue; }
-
-                // Lerp towards target
-                p.x += (p.tx - p.x) * moveSpeed;
-                p.y += (p.ty - p.y) * moveSpeed;
-
-                // Pick a new target if hit hard by bass
-                if (bass > 200 && Math.random() > 0.95) {
-                    p.tx = Math.random() * (canvas.width - p.w) + o;
-                    p.ty = Math.random() * (canvas.height - p.h);
-                }
+                p.x += (p.tx - p.x) * moveSpeed; p.y += (p.ty - p.y) * moveSpeed;
+                if (bass > 200 && Math.random() > 0.95) { p.tx = Math.random() * (canvas.width - p.w) + o; p.ty = Math.random() * (canvas.height - p.h); }
 
                 let dx = 0, dy = 0;
-                if (avg > 100) {
-                    dx = (Math.random() - 0.5) * (avg / 5);
-                    dy = (Math.random() - 0.5) * (avg / 5);
-                }
+                if (avg > 100) { dx = (Math.random() - 0.5) * (avg / 5); dy = (Math.random() - 0.5) * (avg / 5); }
 
                 ctx.save();
                 ctx.translate(dx, dy);
-                ctx.fillStyle = "rgba(10, 10, 10, 0.95)";
-                ctx.fillRect(p.x, p.y, p.w, p.h);
-                ctx.strokeStyle = p.color;
-                ctx.lineWidth = 2;
-                ctx.strokeRect(p.x, p.y, p.w, p.h);
-                ctx.fillStyle = p.color;
-                ctx.fillRect(p.x, p.y, p.w, 25);
-                ctx.fillStyle = "#000";
-                ctx.font = "bold 14px monospace";
-                ctx.textAlign = "left";
-                ctx.fillText("WARNING.exe", p.x + 8, p.y + 18);
-                ctx.fillStyle = "#ff0000";
-                ctx.fillRect(p.x + p.w - 30, p.y + 2, 28, 21);
-                ctx.fillStyle = "#ffffff";
-                ctx.font = "bold 14px sans-serif";
-                ctx.textAlign = "center";
-                ctx.fillText("X", p.x + p.w - 16, p.y + 18);
-                ctx.fillStyle = p.color;
-                ctx.font = "18px monospace";
-                ctx.textAlign = "center";
-                ctx.fillText(p.msg, p.x + p.w / 2, p.y + p.h / 2 + 10);
-
-                if (avg > 180 && Math.random() > 0.5) {
-                    for (let g = 0; g < p.glitchLines; g++) {
-                        ctx.fillStyle = Math.random() > 0.5 ? p.color : "#ffffff";
-                        ctx.fillRect(p.x, p.y + Math.random() * p.h, p.w, 2 + Math.random() * 6);
-                    }
-                }
+                ctx.fillStyle = "rgba(10, 10, 10, 0.95)"; ctx.fillRect(p.x, p.y, p.w, p.h);
+                ctx.strokeStyle = p.color; ctx.lineWidth = 2; ctx.strokeRect(p.x, p.y, p.w, p.h);
+                ctx.fillStyle = p.color; ctx.fillRect(p.x, p.y, p.w, 25);
+                ctx.fillStyle = "#000"; ctx.font = "bold 14px monospace"; ctx.textAlign = "left"; ctx.fillText("WARNING.exe", p.x + 8, p.y + 18);
+                ctx.fillStyle = "#ff0000"; ctx.fillRect(p.x + p.w - 30, p.y + 2, 28, 21);
+                ctx.fillStyle = "#ffffff"; ctx.font = "bold 14px sans-serif"; ctx.textAlign = "center"; ctx.fillText("X", p.x + p.w - 16, p.y + 18);
+                ctx.fillStyle = p.color; ctx.font = "18px monospace"; ctx.textAlign = "center"; ctx.fillText(p.msg, p.x + p.w / 2, p.y + p.h / 2 + 10);
+                if (avg > 180 && Math.random() > 0.5) { for (let g = 0; g < p.glitchLines; g++) { ctx.fillStyle = Math.random() > 0.5 ? p.color : "#ffffff"; ctx.fillRect(p.x, p.y + Math.random() * p.h, p.w, 2 + Math.random() * 6); } }
                 ctx.restore();
             }
         }
@@ -331,18 +247,15 @@ window.addEventListener('DOMContentLoaded', () => {
         ctx.textAlign = 'left';
         ctx.fillText(`VISUALIZER: ${settings.visualizerType.toUpperCase()}`, 20, 30);
         ctx.fillText(`SOURCE: ${settings.audioType.toUpperCase()}`, 20, 50);
-        
         ctx.textAlign = 'right';
         ctx.fillText(`VOL: ${Math.round(avgVolume)}`, canvas.width - 20, 30);
-        
-        // Metadata
         ctx.textAlign = 'left';
         ctx.font = 'bold 20px sans-serif';
         ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-        ctx.fillText(currentSong.title, 20, canvas.height - 40);
+        ctx.fillText("EchoesRealm Visualizer", 20, canvas.height - 40);
         ctx.font = '14px sans-serif';
         ctx.fillStyle = 'rgba(200, 200, 200, 0.8)';
-        ctx.fillText(currentSong.artist, 20, canvas.height - 20);
+        ctx.fillText(`Live Input - ${settings.audioType === 'microphone' ? 'Microphone' : 'System Audio'}`, 20, canvas.height - 20);
         ctx.restore();
     }
 
@@ -387,10 +300,8 @@ window.addEventListener('DOMContentLoaded', () => {
     function saveSettings() { localStorage.setItem('visualizerSettings', JSON.stringify(settings)); }
     function loadSettings() { 
         const saved = localStorage.getItem('visualizerSettings'); if (saved) settings = { ...defaultSettings, ...JSON.parse(saved) }; 
-        
         visBtns.forEach(btn => { btn.classList.toggle('active', btn.dataset.vis === settings.visualizerType); });
         visualizerSelect.value = settings.visualizerType; 
-
         dynamicCheckbox.checked = settings.dynamicEffects; shakeSlider.value = settings.shake; aberrationSlider.value = settings.aberration; scanlineSlider.value = settings.scanlines; accentColorCheckbox.checked = settings.useAccentColor; backgroundColorInput.value = settings.backgroundColor; sensitivitySlider.value = settings.sensitivity; smoothingSlider.value = (settings.smoothing || 0.8) * 100; trailSlider.value = settings.trailAmount * 100; audioSourceSelect.value = settings.audioType; fillCheckbox.checked = settings.filledShapes; directionSelect.value = settings.circularDirection; rotationSlider.value = settings.rotationSpeed; rainbowCheckbox.checked = settings.rainbowMode; rainbowSpeedSlider.value = settings.rainbowSpeed; gradientBgCheckbox.checked = settings.gradientBackground; document.getElementById('zoomSlider').value = settings.zoom; document.getElementById('flashSlider').value = settings.flash; document.getElementById('showHUDCheckbox').checked = settings.showHUD; backgroundRgb = hexToRgb(settings.backgroundColor); dynamicEffectsFieldset.classList.toggle('disabled', !settings.dynamicEffects); if(settings.profileImagePath) setProfileImage(settings.profileImagePath); handleVisualizerOptionsVisibility(); handleRainbowModeVisibility(); updateContrast(); 
     }
     
@@ -409,24 +320,9 @@ window.addEventListener('DOMContentLoaded', () => {
     function getAverageVolume(dataArray) { let sum = 0; if (dataArray) { for (let i = 0; i < dataArray.length; i++) { sum += dataArray[i]; } return sum / dataArray.length; } return 0; }
     function getMultiStopGradientColor(fraction) { if (!settings.gradientColors || settings.gradientColors.length < 2) return (settings.gradientColors && settings.gradientColors[0]) || '#ffffff'; const stopIndex = fraction * (settings.gradientColors.length - 1); const startIndex = Math.floor(stopIndex); const endIndex = Math.min(startIndex + 1, settings.gradientColors.length - 1); const localFraction = stopIndex - startIndex; const start = hexToRgb(settings.gradientColors[startIndex]); const end = hexToRgb(settings.gradientColors[endIndex]); const r = Math.round(start.r + (end.r - start.r) * localFraction); const g = Math.round(start.g + (end.g - start.g) * localFraction); const b = Math.round(start.b + (end.b - start.b) * localFraction); return `rgb(${r}, ${g}, ${b})`; }
     function getDrawColor(fraction) { if (settings.rainbowMode) { const hue = (fraction * 360) + rainbowHueOffset; return `hsl(${hue % 360}, 100%, 50%)`; } return getMultiStopGradientColor(fraction); }
-    function handleVisualizerOptionsVisibility() { const type = settings.visualizerType; const hasFillOption =['blob', 'sunburst', 'polygons', 'nestedPolygons', 'shatter', 'flower', 'kaleidoscope', 'tunnel', 'rings', 'wireframeSphere', 'orbit', 'ransom'].includes(type); const hasDirectionOption = ['circle', 'tunnel'].includes(type); const hasRotationOption =['polygons', 'nestedPolygons', 'starfield', 'kaleidoscope', 'tunnel', 'rings', 'wireframeSphere', 'orbit'].includes(type); visualizerOptionsFieldset.classList.toggle('hidden', !hasFillOption && !hasDirectionOption && !hasRotationOption); fillCheckbox.parentElement.style.display = hasFillOption ? '' : 'none'; directionSelect.parentElement.style.display = hasDirectionOption ? '' : 'none'; rotationSlider.parentElement.style.display = hasRotationOption ? '' : 'none'; }
+    function handleVisualizerOptionsVisibility() { const type = settings.visualizerType; const hasFillOption =['blob', 'sunburst', 'polygons', 'nestedPolygons', 'shatter', 'flower', 'kaleidoscope', 'tunnel', 'rings', 'wireframeSphere', 'orbit', 'ransom'].includes(type); const hasDirectionOption = ['circle', 'tunnel'].includes(type); const hasRotationOption =['polygons', 'nestedPolygons', 'starfield', 'kaleidoscope', 'tunnel', 'rings', 'wireframeSphere', 'vortex', 'orbit'].includes(type); visualizerOptionsFieldset.classList.toggle('hidden', !hasFillOption && !hasDirectionOption && !hasRotationOption); fillCheckbox.parentElement.style.display = hasFillOption ? '' : 'none'; directionSelect.parentElement.style.display = hasDirectionOption ? '' : 'none'; rotationSlider.parentElement.style.display = hasRotationOption ? '' : 'none'; }
     function handleRainbowModeVisibility() { rainbowControls.classList.toggle('hidden', !settings.rainbowMode); gradientControls.classList.toggle('disabled', settings.rainbowMode || settings.useAccentColor); accentColorCheckbox.disabled = settings.rainbowMode; }
-    
-    function setProfileImage(base64Data) { 
-        if (base64Data) { 
-            profileImage = new Image(); 
-            profileImage.src = base64Data; 
-            settings.profileImagePath = base64Data; 
-            pfpPreview.src = base64Data; 
-            pfpPreview.classList.remove('hidden'); 
-        } else { 
-            profileImage = null; 
-            settings.profileImagePath = null; 
-            pfpPreview.src = '#'; 
-            pfpPreview.classList.add('hidden'); 
-        } 
-        saveSettings(); 
-    }
+    function setProfileImage(path) { if (path) { profileImage = new Image(); profileImage.src = path; settings.profileImagePath = path; pfpPreview.src = path; pfpPreview.classList.remove('hidden'); } else { profileImage = null; settings.profileImagePath = null; pfpPreview.src = '#'; pfpPreview.classList.add('hidden'); } saveSettings(); }
 
     // --- EVENT LISTENERS ---
     
@@ -449,18 +345,6 @@ window.addEventListener('DOMContentLoaded', () => {
     clearPfpButton.addEventListener('click', () => setProfileImage(null));
     extractColorsButton.addEventListener('click', async () => { const paths = await window.electronAPI.showOpenDialog({ properties:['openFile'], filters: [{ name: 'Images', extensions:['png', 'jpg', 'jpeg'] }] }); if (paths && paths[0]) { const b64 = await window.electronAPI.readFileBase64(paths[0]); if (b64) extractColorsFromImage(b64); } });
     
-    document.getElementById('selectAudioButton').addEventListener('click', async () => {
-        const paths = await window.electronAPI.showOpenDialog({ properties: ['openFile'], filters: [{ name: 'Audio', extensions: ['mp3', 'wav', 'ogg', 'flac'] }] });
-        if (paths && paths[0]) {
-            const metadata = await window.electronAPI.getAudioMetadata(paths[0]);
-            if (metadata) {
-                currentSong.title = metadata.title || paths[0].split(/[\\/]/).pop();
-                currentSong.artist = metadata.artist || "Unknown Artist";
-                document.getElementById('audioFileName').textContent = currentSong.title;
-            }
-        }
-    });
-
     audioSourceSelect.addEventListener('change', () => { settings.audioType = audioSourceSelect.value; updateAudioSourceUI(); saveSettings(); startOrUpdateAudioSource(); });
     microphoneSelect.addEventListener('change', () => { settings.microphoneId = microphoneSelect.value; saveSettings(); startOrUpdateAudioSource(); });
     fillCheckbox.addEventListener('change', (e) => { settings.filledShapes = e.target.checked; saveSettings(); });

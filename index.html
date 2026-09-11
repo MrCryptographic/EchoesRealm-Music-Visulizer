@@ -16,6 +16,7 @@
 
     <canvas id="visualizerCanvas"></canvas>
     
+    <div id="metadataDisplay" class="hidden"><p id="metaTitle"></p><p id="metaArtist"></p></div>
     <div id="silentMessage" class="hidden"></div>
     
     <div id="uiContainer">
@@ -88,7 +89,7 @@
             <fieldset id="dynamicEffectsFieldset"><legend>Effects Engine</legend>
                 <div class="setting-row"><label for="shakeSlider">Shake Intensity</label><input type="range" id="shakeSlider" min="0" max="50" step="1"></div>
                 <div class="setting-row"><label for="zoomSlider">Camera Zoom (Beat)</label><input type="range" id="zoomSlider" min="0" max="30" step="1"></div>
-                <div class="setting-row"><label for="aberrationSlider">Color Aberration</label><input type="range" id="aberrationSlider" min="0" max="30" step="1"></div>
+                <div class="setting-row"><label for="aberrationSlider">Color Aberration</label><input type="range" id="aberrationSlider" min="0" max="20" step="1"></div>
                 <div class="setting-row"><label for="flashSlider">Peak Flash</label><input type="range" id="flashSlider" min="0" max="50" step="1"></div>
                 <div class="setting-row"><label for="scanlineSlider">Scan Line Intensity</label><input type="range" id="scanlineSlider" min="0" max="50" step="1"></div>
             </fieldset>
@@ -111,18 +112,11 @@
             <div class="setting-row"><label for="backgroundColor">Background</label><input type="color" id="backgroundColor"></div>
             
             <div class="setting-row"><label for="sensitivitySlider">Sensitivity</label><input type="range" id="sensitivitySlider" min="1" max="5" step="0.1"></div>
-            <div class="setting-row"><label for="smoothingSlider">Responsiveness</label><input type="range" id="smoothingSlider" min="0" max="95" value="80" step="1"></div>
+            <div class="setting-row"><label for="smoothingSlider">Responsiveness (Smoothing)</label><input type="range" id="smoothingSlider" min="0" max="95" value="80" step="1"></div>
             <div class="setting-row"><label for="trailSlider">Motion Blur</label><input type="range" id="trailSlider" min="0" max="50" step="1"></div>
             
             <hr>
-            
-            <!-- Hidden Audio Player to process local file metadata for the HUD -->
-            <audio id="audioPlayer" style="display: none;"></audio>
-            <div class="setting-row"><label>Test Local Audio File</label></div>
-            <button id="selectAudioButton" class="action-button">Select Audio for HUD</button>
-            <p id="audioFileName" style="font-size: 0.8em; color: #888; text-align: center;">No file selected.</p>
-
-            <button id="resetSettingsButton" class="action-button danger-btn" style="width: 100%; margin-top: 20px;">Reset to Defaults</button>
+            <button id="resetSettingsButton" class="action-button danger-btn" style="width: 100%; margin-top: 10px;">Reset to Defaults</button>
         </div>
     </div>
     <script src="renderer.js"></script>
